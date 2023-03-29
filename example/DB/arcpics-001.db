@@ -1,0 +1,9 @@
+#just text, no database
+If this database would have a pair key/value
+key  : DIRECTORY_KEY
+value: arcpics-db-postfix.001
+
+then pictures root directory has to have file with name arcpics-db-postfix.001
+It can be even empty or not empty.
+
+recomended database names are arcpics-NNN.db
