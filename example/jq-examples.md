@@ -2,7 +2,7 @@
 ***
 **print all objects which contains string "inter" in comment**
 
-find Arc-Pics -name "arcpics.json" -exec jq -r '.files[] | select(.comment | . and contains("inter"))' {} \;
+> find Arc-Pics -name "arcpics.json" -exec jq -r '.files[] | select(.comment | . and contains("inter"))' {} \;
 
 **in a directory print about, all comments and selected comment**
 
