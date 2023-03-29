@@ -1,9 +1,9 @@
 #just text, no database
 If this database would have a pair key/value
-key  : DIRECTORY_KEY
-value: arcpics-db-postfix.002
+key  : ARC-PICS-LABEL-KEY
+value: arcpics-db-label.002
 
-then pictures root directory has to have file with name arcpics-db-postfix.002
+then pictures root directory has to have file with name arcpics-db-label.002
 It can be even empty or not empty.
 
 Still, recomended database names are arcpics-NNN.db

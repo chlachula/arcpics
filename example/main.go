@@ -19,15 +19,17 @@ func directoriesWalk(path string, info os.FileInfo, err error) error {
 	if info.IsDir() {
 		fmt.Printf("dir: %v\n", path)
 	} else {
-		fmt.Printf("     %-20s %10d %10s %10s\n", info.Name(), info.Size(), info.Mode(), info.ModTime())
 		if db == nil {
 			panic(fmt.Errorf("db is nil"))
 		}
-		if getDbValue(db, FILES_BUCKET, path) != path {
-			err := putDbValue(db, FILES_BUCKET, path, info.Name()+"-"+info.ModTime().String())
+		if getDbValue(db, FILES_BUCKET, path) == "" {
+			fmt.Printf("     %-20s %10d %10s %10s\n", info.Name(), info.Size(), info.Mode(), info.ModTime())
+			value := info.Name() + "-" + info.ModTime().String()
+			err := putDbValue(db, FILES_BUCKET, path, value)
 			if err != nil {
 				panic(err)
 			}
+			fmt.Printf("     added value %s\n", value)
 		}
 	}
 	return nil
@@ -57,6 +59,10 @@ func main() {
 	var picturesDirName string
 	var err error
 	picturesDirName, db, err = AssignPicturesDirectoryWithDatabase(os.Args[1:])
+	if err != nil {
+		help(err.Error())
+		os.Exit(1)
+	}
 
 	err = filepath.Walk(picturesDirName, directoriesWalk)
 	if err != nil {

@@ -1,8 +1,8 @@
-There is one file with name arcpics-db-postfix.000 in this directory
+There is one file with name arcpics-db-label.000 in this directory
 
-Archive picture directory should have exactly one identification file with name arcpics-db-postfix.NNN
+Archive picture directory should have exactly one identification file with name arcpics-db-label.NNN
 NNN is typically number, but it can be any alphanumeric string with at least one character.
 Possible names are also 
- arcpics-db-postfix.disk2TB
- arcpics-db-postfix.CANON
- arcpics-db-postfix.family-vacation-2023
+ arcpics-db-label.disk2TB
+ arcpics-db-label.CANON
+ arcpics-db-label.family-vacation-2023

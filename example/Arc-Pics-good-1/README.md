@@ -1,3 +1,3 @@
-There is one file with name arcpics-db-postfix.a
+There is one file with name arcpics-db-label.a
 
-Extension or postfix can be even one character
+Extension or label can be even one character

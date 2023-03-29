@@ -12,11 +12,11 @@ import (
 
 var SYSTEM_BUCKET = []byte("SYSTEM")
 var FILES_BUCKET = []byte("FILES")
-var INIT_POSTFIX_KEY = "ARC-PICS-POSTFIX-KEY"
+var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 
-func dbPostfix(archiveDir string) (string, error) {
-	NAME_START := "arcpics-db-postfix."
-	postfix := ""
+func dbLabel(archiveDir string) (string, error) {
+	NAME_START := "arcpics-db-label."
+	label := ""
 	files, err := os.ReadDir(archiveDir)
 	if err != nil {
 		log.Fatal(err)
@@ -25,18 +25,18 @@ func dbPostfix(archiveDir string) (string, error) {
 	for _, f := range files {
 		if strings.HasPrefix(f.Name(), NAME_START) {
 			count++
-			postfix = f.Name()[len(NAME_START):]
+			label = f.Name()[len(NAME_START):]
 		}
 	}
 	if count == 0 {
-		return postfix, fmt.Errorf("there is no file %s* at directory %s - should be e.g. %s001", NAME_START, archiveDir, NAME_START)
+		return label, fmt.Errorf("there is no file %s* at directory %s - should be e.g. %s001", NAME_START, archiveDir, NAME_START)
 	} else if count > 1 {
-		return postfix, fmt.Errorf("unexpected number files %s* at directory %s", NAME_START, archiveDir)
+		return label, fmt.Errorf("unexpected number files %s* at directory %s", NAME_START, archiveDir)
 	}
-	if len(postfix) < 1 {
-		return postfix, fmt.Errorf("there is not at least one character postfix after dot 'arcpics-db-postfix.'")
+	if len(label) < 1 {
+		return label, fmt.Errorf("there is not at least one character label after dot 'arcpics-db-label.'")
 	}
-	return postfix, nil
+	return label, nil
 }
 func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := "Arc-Pics"
@@ -60,9 +60,9 @@ func fileExists(filename string) bool {
 	}
 	return !info.IsDir()
 }
-func insertSystemPostfixValue(db *bolt.DB, value string) error {
+func insertSystemLabelValue(db *bolt.DB, value string) error {
 	//return insertDbValue(db, SYSTEM_BUCKET, keyBytes)
-	keyBytes := []byte(INIT_POSTFIX_KEY)
+	keyBytes := []byte(INIT_LABEL_KEY)
 	err := db.Update(func(tx *bolt.Tx) error {
 		foundBytes := tx.Bucket([]byte(SYSTEM_BUCKET)).Get(keyBytes)
 		if len(foundBytes) == 0 {
@@ -101,11 +101,11 @@ func getDbValue(db *bolt.DB, bucket []byte, key string) string {
 
 func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error) {
 	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(os.Args[1:])
-	postFix, err := dbPostfix(picturesDirName)
+	label, err := dbLabel(picturesDirName)
 	if err != nil {
 		return picturesDirName, nil, err
 	}
-	databaseName := filepath.Join(databaseDirName, "arcpics-"+postFix+".db")
+	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
 
 	dbDidExist := fileExists(databaseName)
 
@@ -118,15 +118,15 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 
 	if dbDidExist {
 		// check INIT key
-		s := getDbValue(db, SYSTEM_BUCKET, INIT_POSTFIX_KEY)
-		if s != postFix {
-			return picturesDirName, db, fmt.Errorf("init value  %s at DB %s doesn't match %s at dir %s", s, databaseName, postFix, picturesDirName)
+		s := getDbValue(db, SYSTEM_BUCKET, INIT_LABEL_KEY)
+		if s != label {
+			return picturesDirName, db, fmt.Errorf("init value  %s at DB %s doesn't match %s at dir %s", s, databaseName, label, picturesDirName)
 		}
 	} else {
 		insertNewBucket(db, SYSTEM_BUCKET) // insert SYSTEM bucket just once
 
 		// insert init key into SYSTEM bucket just once
-		err = insertSystemPostfixValue(db, postFix)
+		err = insertSystemLabelValue(db, label)
 		if err != nil {
 			panic(err)
 		}
