@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -61,7 +60,8 @@ func main() {
 
 	err = filepath.Walk(picturesDirName, directoriesWalk)
 	if err != nil {
-		log.Println(err)
+		help(err.Error())
+		os.Exit(1)
 	}
 
 	defer db.Close()
