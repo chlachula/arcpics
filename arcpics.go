@@ -1,4 +1,4 @@
-package main
+package arcpics
 
 import (
 	"fmt"
@@ -14,7 +14,7 @@ var SYSTEM_BUCKET = []byte("SYSTEM")
 var FILES_BUCKET = []byte("FILES")
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 
-func dbLabel(archiveDir string) (string, error) {
+func DbLabel(archiveDir string) (string, error) {
 	NAME_START := "arcpics-db-label."
 	label := ""
 	files, err := os.ReadDir(archiveDir)
@@ -23,6 +23,7 @@ func dbLabel(archiveDir string) (string, error) {
 	}
 	count := 0
 	for _, f := range files {
+		fmt.Println(f.Name())
 		if strings.HasPrefix(f.Name(), NAME_START) {
 			count++
 			label = f.Name()[len(NAME_START):]
@@ -84,13 +85,13 @@ func insertNewBucket(db *bolt.DB, bucket []byte) {
 		panic(err)
 	}
 }
-func putDbValue(db *bolt.DB, bucket []byte, key, value string) error {
+func PutDbValue(db *bolt.DB, bucket []byte, key, value string) error {
 	err := db.Update(func(tx *bolt.Tx) error {
 		return tx.Bucket(bucket).Put([]byte(key), []byte(value))
 	})
 	return err
 }
-func getDbValue(db *bolt.DB, bucket []byte, key string) string {
+func GetDbValue(db *bolt.DB, bucket []byte, key string) string {
 	var valueBytes []byte
 	_ = db.View(func(tx *bolt.Tx) error {
 		valueBytes = tx.Bucket([]byte(bucket)).Get([]byte(key))
@@ -101,7 +102,7 @@ func getDbValue(db *bolt.DB, bucket []byte, key string) string {
 
 func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error) {
 	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(os.Args[1:])
-	label, err := dbLabel(picturesDirName)
+	label, err := DbLabel(picturesDirName)
 	if err != nil {
 		return picturesDirName, nil, err
 	}
@@ -118,7 +119,7 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 
 	if dbDidExist {
 		// check INIT key
-		s := getDbValue(db, SYSTEM_BUCKET, INIT_LABEL_KEY)
+		s := GetDbValue(db, SYSTEM_BUCKET, INIT_LABEL_KEY)
 		if s != label {
 			return picturesDirName, db, fmt.Errorf("init value  %s at DB %s doesn't match %s at dir %s", s, databaseName, label, picturesDirName)
 		}
