@@ -13,9 +13,12 @@ import (
 var SYSTEM_BUCKET = []byte("SYSTEM")
 var FILES_BUCKET = []byte("FILES")
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
+var defaultPicturesDirName = "Arc-Pics"
+var defaultDatabaseDirName = "DB"
+var defaultArcpicsDbLabel = "arcpics-db-label."
 
 func DbLabel(archiveDir string) (string, error) {
-	NAME_START := "arcpics-db-label."
+	nameStart := defaultArcpicsDbLabel
 	label := ""
 	files, err := os.ReadDir(archiveDir)
 	if err != nil {
@@ -24,15 +27,15 @@ func DbLabel(archiveDir string) (string, error) {
 	count := 0
 	for _, f := range files {
 		fmt.Println(f.Name())
-		if strings.HasPrefix(f.Name(), NAME_START) {
+		if strings.HasPrefix(f.Name(), nameStart) {
 			count++
-			label = f.Name()[len(NAME_START):]
+			label = f.Name()[len(nameStart):]
 		}
 	}
 	if count == 0 {
-		return label, fmt.Errorf("there is no file %s* at directory %s - should be e.g. %s001", NAME_START, archiveDir, NAME_START)
+		return label, fmt.Errorf("there is no file %s* at directory %s - should be e.g. %s001", nameStart, archiveDir, nameStart)
 	} else if count > 1 {
-		return label, fmt.Errorf("unexpected number files %s* at directory %s", NAME_START, archiveDir)
+		return label, fmt.Errorf("unexpected number files %s* at directory %s", nameStart, archiveDir)
 	}
 	if len(label) < 1 {
 		return label, fmt.Errorf("there is not at least one character label after dot 'arcpics-db-label.'")
@@ -40,8 +43,8 @@ func DbLabel(archiveDir string) (string, error) {
 	return label, nil
 }
 func picturesAndDatabaseDirectories(args []string) (string, string) {
-	picturesDirName := "Arc-Pics"
-	databaseDirName := "DB"
+	picturesDirName := defaultPicturesDirName
+	databaseDirName := defaultDatabaseDirName
 
 	if len(args) < 1 {
 		return picturesDirName, databaseDirName
@@ -107,8 +110,8 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 		return picturesDirName, nil, err
 	}
 	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
-
 	dbDidExist := fileExists(databaseName)
+	fmt.Printf("TEST databaseName=%s, dbDidExist=%t \n", databaseName, dbDidExist)
 
 	// Open the database data file. It will be created if it doesn't exist.
 	var db *bolt.DB
