@@ -26,7 +26,6 @@ func DbLabel(archiveDir string) (string, error) {
 	}
 	count := 0
 	for _, f := range files {
-		fmt.Println(f.Name())
 		if strings.HasPrefix(f.Name(), nameStart) {
 			count++
 			label = f.Name()[len(nameStart):]
@@ -49,10 +48,12 @@ func picturesAndDatabaseDirectories(args []string) (string, string) {
 	if len(args) < 1 {
 		return picturesDirName, databaseDirName
 
-	} else if len(args) > 1 {
+	}
+	if len(args) >= 1 {
 		picturesDirName = args[0]
 
-	} else if len(args) >= 2 {
+	}
+	if len(args) > 1 {
 		databaseDirName = args[1]
 	}
 	return picturesDirName, databaseDirName
@@ -104,14 +105,13 @@ func GetDbValue(db *bolt.DB, bucket []byte, key string) string {
 }
 
 func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error) {
-	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(os.Args[1:])
+	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(args[1:])
 	label, err := DbLabel(picturesDirName)
 	if err != nil {
 		return picturesDirName, nil, err
 	}
 	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
 	dbDidExist := fileExists(databaseName)
-	fmt.Printf("TEST databaseName=%s, dbDidExist=%t \n", databaseName, dbDidExist)
 
 	// Open the database data file. It will be created if it doesn't exist.
 	var db *bolt.DB
