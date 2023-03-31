@@ -102,21 +102,19 @@ func TestAssignPicturesDirectoryWithDatabase(t *testing.T) {
 	if gotErr != nil {
 		t.Errorf(gotErr.Error())
 	}
-	/*
-		db, err := bolt.Open(temporaryFile, 0666, nil)
-		if err != nil {
-			t.Errorf("error opening bolt temporrary DB: " + err.Error())
-		}
-		defer os.Remove(db.Path())
 
-		wantLabel, err := DbLabel(wantPicDir)
-		if err != nil {
-			t.Errorf("error getting label: " + err.Error())
-		}
+	wantLabel, err := DbLabel(wantPicDir)
+	if err != nil {
+		t.Errorf("error getting label: " + err.Error())
+	}
 
-		gotLabel := GetDbValue(gotDb, SYSTEM_BUCKET, INIT_LABEL_KEY)
-		if wantLabel != gotLabel {
-			t.Errorf("error - wantLabel: %s; gotLabel: %s", wantLabel, gotLabel)
-		}
-	*/
+	gotLabel := GetDbValue(gotDb, SYSTEM_BUCKET, INIT_LABEL_KEY)
+	if wantLabel != gotLabel {
+		t.Errorf("error - wantLabel: %s; gotLabel: %s", wantLabel, gotLabel)
+	}
+
+	if err := gotDb.Close(); err != nil {
+		t.Errorf("error - closing bolt DB: " + err.Error())
+	}
+
 }

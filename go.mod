@@ -1,4 +1,4 @@
-module arcpics
+module github.com/chlachula/arcpics
 
 go 1.20
 
