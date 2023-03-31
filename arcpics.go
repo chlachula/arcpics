@@ -3,6 +3,7 @@ package arcpics
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -160,7 +161,52 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 	return picturesDirName, db, nil
 }
 
+func filesInDir(d string) ([]fs.DirEntry, error) {
+	var files []fs.DirEntry
+	var err error
+	if files, err = os.ReadDir(d); err != nil {
+		return nil, err
+	}
+	onlyFiles := make([]fs.DirEntry, 0)
+	for _, file := range files {
+		if !file.IsDir() {
+			onlyFiles = append(onlyFiles, file)
+		}
+	}
+
+	for _, f := range onlyFiles {
+		info, _ := f.Info()
+		fmt.Printf("    fs.DirEntry: %v %v\n", f.Name(), info.ModTime())
+	}
+	fmt.Printf("----\n")
+
+	return onlyFiles, nil
+}
+
+func FilesInDirXXX(d string) (JdirType, error) {
+	var jd JdirType
+	jd.Files = make([]JfileType, 0)
+	jd.Description = "a description..."
+	jd.Location = "a secret location..."
+	var files []fs.DirEntry
+	var err error
+	if files, err = filesInDir(d); err != nil {
+		return jd, err
+	}
+
+	for _, f := range files {
+		info, _ := f.Info()
+		var file JfileType
+		file.Name = info.Name()
+		file.Time = info.ModTime().Format("2006-01-02_15:04:05")
+		file.Comment = "my comment, realy"
+		jd.Files = append(jd.Files, file)
+	}
+	return jd, nil
+}
+
 func CreateDirJson(d string, dirFiles JdirType) error {
+	_, _ = filesInDir(d)
 	jsonBytes, err := json.Marshal(dirFiles)
 	if err != nil {
 		return err
