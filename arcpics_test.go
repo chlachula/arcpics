@@ -40,7 +40,7 @@ func TestDbLabel1(t *testing.T) {
 func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
 	wantDbDir := defaultDatabaseDirName
-	args := make([]string, 0)
+	args := make([]string, 1)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
@@ -52,8 +52,8 @@ func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	wantPicDir := "ABCD"
 	wantDbDir := defaultDatabaseDirName
-	args := make([]string, 1)
-	args[0] = wantPicDir
+	args := make([]string, 2)
+	args[1] = wantPicDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
@@ -65,9 +65,9 @@ func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 func TestPicturesAndDatabaseDirectories2(t *testing.T) {
 	wantPicDir := "ABCD"
 	wantDbDir := "XYZ"
-	args := make([]string, 2)
-	args[0] = wantPicDir
-	args[1] = wantDbDir
+	args := make([]string, 3)
+	args[1] = wantPicDir
+	args[2] = wantDbDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)

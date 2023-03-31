@@ -45,16 +45,16 @@ func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := defaultPicturesDirName
 	databaseDirName := defaultDatabaseDirName
 
-	if len(args) < 1 {
+	if len(args) < 2 {
 		return picturesDirName, databaseDirName
 
 	}
-	if len(args) >= 1 {
-		picturesDirName = args[0]
+	if len(args) >= 2 {
+		picturesDirName = args[1]
 
 	}
-	if len(args) > 1 {
-		databaseDirName = args[1]
+	if len(args) > 2 {
+		databaseDirName = args[2]
 	}
 	return picturesDirName, databaseDirName
 }
@@ -105,7 +105,7 @@ func GetDbValue(db *bolt.DB, bucket []byte, key string) string {
 }
 
 func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error) {
-	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(args[1:])
+	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(args)
 	label, err := DbLabel(picturesDirName)
 	if err != nil {
 		return picturesDirName, nil, err
