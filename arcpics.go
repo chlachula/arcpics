@@ -1,9 +1,9 @@
 package arcpics
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
-	"io/fs"
+	//"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/boltdb/bolt"
 )
-
+/*
 type JfileType = struct {
 	Name    string
 	Time    string
@@ -30,7 +30,7 @@ var defaultPicturesDirName = "Arc-Pics"
 var defaultDatabaseDirName = "DB"
 var defaultArcpicsDbLabel = "arcpics-db-label."
 var jsonFilePrefix = "sample.json"
-
+*/
 func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := defaultPicturesDirName
 	databaseDirName := defaultDatabaseDirName
@@ -160,7 +160,7 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 	}
 	return picturesDirName, db, nil
 }
-
+/*
 func filesInDir(d string) ([]fs.DirEntry, error) {
 	var files []fs.DirEntry
 	var err error
@@ -244,3 +244,4 @@ func UpdateDirJson(d string) error {
 	}
 	return nil
 }
+*/
