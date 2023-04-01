@@ -130,3 +130,19 @@ func TestFilesCount(t *testing.T) {
 		t.Errorf("error - wantCount: %d; gotCount: %d", wantCount, gotCount)
 	}
 }
+func TestDirFilesCount(t *testing.T) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	fs, err := ArcpicsFS(picDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	wantDirCount := 5   // find example/Arc-Pics -type d | wc .. 5 directories
+	wantFilesCount := 7 // find example/Arc-Pics -type f | wc .. 7 files
+	gotDirCount, gotFilesCount := DirFilesCount(fs)
+	if wantDirCount != gotDirCount {
+		t.Errorf("error - wantDirCount: %d; gotDirCount: %d", wantDirCount, gotDirCount)
+	}
+	if wantFilesCount != gotFilesCount {
+		t.Errorf("error - wantFilesCount: %d; gotFilesCount: %d", wantFilesCount, gotFilesCount)
+	}
+}

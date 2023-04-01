@@ -72,3 +72,19 @@ func FilesCount(fsys fs.FS) (count int) {
 	})
 	return count
 }
+func DirFilesCount(fsys fs.FS) (int, int) {
+	countDir := 0
+	countFiles := 0
+	fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			countDir++
+			fmt.Printf("dir  #%3d - %s\n", countDir, path)
+		} else {
+			countFiles++
+			fmt.Printf("    file #%3d - %s\n", countFiles, path)
+
+		}
+		return nil
+	})
+	return countDir, countFiles
+}
