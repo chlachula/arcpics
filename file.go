@@ -1,6 +1,7 @@
 package arcpics
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -15,6 +16,9 @@ import (
 // For example file "arcpics-db-label.a" has label value "a"
 // or "arcpics-db-label.my1TB_hard_drive" has label value "my1TB_hard_drive"
 //
+// ATTENTION!!
+// ArcpicsFS work fine with fs.WalkDir unless there are any file operations
+// Then use filepath.WalkDir(arcpicsFS.Dir,...
 
 var defaultArcpicsDbLabel = "arcpics-db-label."
 
@@ -104,13 +108,8 @@ func DirCount(fsys fs.FS) (countDir int) {
 	return countDir
 }
 
-// func ArcpicsFilesUpdate(fsys fs.FS) error {
 func ArcpicsFilesUpdate(dir string) error {
 	countDir := 0
-	//countFiles := 0
-	//dir := ""
-	//entries := make([]fs.DirEntry, 0)
-	//fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println("fs.SkipDir", path)
@@ -143,7 +142,6 @@ func ArcpicsFilesUpdate(dir string) error {
 			if err != nil {
 				return err
 			}
-
 		}
 		return nil
 	})
@@ -151,11 +149,30 @@ func ArcpicsFilesUpdate(dir string) error {
 	fmt.Printf("ArcpicsFilesUpdate: %d directories\n", countDir)
 	return nil
 }
+func readUserData(fname string) (JdirType, error) {
+	var userData JdirType
+	fileBytes, _ := os.ReadFile(fname)
+	err := json.Unmarshal(fileBytes, &userData)
+	return userData, err
+}
 func makeJdir(d string) (JdirType, error) {
 	var jd JdirType
 	jd.Files = make([]JfileType, 0)
-	jd.Description = "a description..."
-	jd.Location = "a secret location..."
+	jd.Description = "here could be a description from file " + jsonUserData
+	jd.Location = "here could be a description from file " + jsonUserData
+	userFile := filepath.Join(d, jsonUserData)
+	if fileExists(userFile) {
+		userData, err := readUserData(userFile)
+		if err == nil {
+			jd.Description = userData.Description
+			jd.Location = userData.Location
+		} else {
+			fmt.Println("-FFFF", userFile)
+			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
+			fmt.Println("\n-END")
+		}
+	}
+
 	var files []fs.DirEntry
 	var err error
 	if files, err = filesInDir(d); err != nil {
@@ -182,24 +199,27 @@ func filesInDir(d string) ([]fs.DirEntry, error) {
 	onlyFiles := make([]fs.DirEntry, 0)
 	for _, file := range files {
 		if !file.IsDir() {
-			if !strings.HasPrefix(file.Name(), jsonFilePrefix) {
+			a := !strings.HasPrefix(file.Name(), jsonFilePrefix)
+			b := !strings.HasPrefix(file.Name(), jsonUserData)
+			if a && b {
 				onlyFiles = append(onlyFiles, file)
 			}
 		}
 	}
-
-	//for _, f := range onlyFiles {
-	//	info, _ := f.Info()
-	//	fmt.Printf("    fs.DirEntry: %v %v\n", f.Name(), info.ModTime())
-	//}
-	//fmt.Printf("----\n")
-
 	return onlyFiles, nil
 }
 
+func prettyprint(b []byte) ([]byte, error) {
+	var out bytes.Buffer
+	err := json.Indent(&out, b, "", "  ")
+	return out.Bytes(), err
+}
 func CreateDirJson(jfname string, jDir JdirType) error {
 	jsonBytes, err := json.Marshal(jDir)
 	if err != nil {
+		return err
+	}
+	if jsonBytes, err = prettyprint(jsonBytes); err != nil {
 		return err
 	}
 	f, err := os.Create(jfname)
@@ -219,7 +239,7 @@ func UpdateDirJson(fjson string, jDir JdirType) error {
 	if fjson_FileInfo, err = os.Stat(fjson); err != nil {
 		return nil // there is now current file
 	}
-	timeExtension := fjson_FileInfo.ModTime().Format("--2006-01-_15-04-05") // Mon Jan 2 15:04:05 -0700 MST 2006
+	timeExtension := fjson_FileInfo.ModTime().Format("--2006-01-02_15-04-05") // Mon Jan 2 15:04:05 -0700 MST 2006
 	fjson_time := fjson + timeExtension
 	if err := os.Rename(fjson, fjson_time); err != nil {
 		return err

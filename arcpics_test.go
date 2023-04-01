@@ -158,6 +158,8 @@ func TestDirCount(t *testing.T) {
 		t.Errorf("error - wantDirCount: %d; gotDirCount: %d", wantDirCount, gotDirCount)
 	}
 }
+
+// go test -run TestArcpicsFilesUpdate
 func TestArcpicsFilesUpdate(t *testing.T) {
 	arcDir := filepath.Join("example", defaultPicturesDirName)
 	fs, err := ArcpicsFS(arcDir)
