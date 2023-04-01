@@ -146,3 +146,14 @@ func TestDirFilesCount(t *testing.T) {
 		t.Errorf("error - wantFilesCount: %d; gotFilesCount: %d", wantFilesCount, gotFilesCount)
 	}
 }
+func TestArcpicsFilesUpdate(t *testing.T) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	fs, err := ArcpicsFS(picDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	err = ArcpicsFilesUpdate(fs)
+	if err != nil {
+		t.Errorf("error - ArcpicsFilesUpdate: " + err.Error())
+	}
+}

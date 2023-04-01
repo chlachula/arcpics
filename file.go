@@ -1,6 +1,7 @@
 package arcpics
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log"
@@ -87,4 +88,114 @@ func DirFilesCount(fsys fs.FS) (int, int) {
 		return nil
 	})
 	return countDir, countFiles
+}
+func ArcpicsFilesUpdate(fsys fs.FS) error {
+	countDir := 0
+	countFiles := 0
+	dir := ""
+	entries := make([]fs.DirEntry, 0)
+	fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
+		if d.IsDir() {
+			countDir++
+			jDir, err := makeJdir(path)
+			fjson := filepath.Join(path, jsonFilePrefix)
+			if !fileExists(fjson) {
+				if err = CreateDirJson(fjson, jDir); err != nil {
+					return err
+				}
+			} else {
+				if err = UpdateDirJson(fjson, jDir); err != nil {
+					return err
+				}
+
+			}
+			if err != nil {
+				return err
+			}
+		} else {
+			countFiles++
+			entries = append(entries, d)
+		}
+		return nil
+	})
+	fmt.Printf("=-dir: %s - files: %q\n", dir, entries)
+	return nil
+}
+func makeJdir(d string) (JdirType, error) {
+	var jd JdirType
+	jd.Files = make([]JfileType, 0)
+	jd.Description = "a description..."
+	jd.Location = "a secret location..."
+	var files []fs.DirEntry
+	var err error
+	if files, err = filesInDir(d); err != nil {
+		return jd, err
+	}
+
+	for _, f := range files {
+		info, _ := f.Info()
+		var file JfileType
+		file.Name = info.Name()
+		file.Time = info.ModTime().Format("2006-01-02_15:04:05")
+		file.Comment = "my comment, realy"
+		jd.Files = append(jd.Files, file)
+	}
+	return jd, nil
+}
+
+func filesInDir(d string) ([]fs.DirEntry, error) {
+	var files []fs.DirEntry
+	var err error
+	if files, err = os.ReadDir(d); err != nil {
+		return nil, err
+	}
+	onlyFiles := make([]fs.DirEntry, 0)
+	for _, file := range files {
+		if !file.IsDir() {
+			if !strings.HasPrefix(file.Name(), jsonFilePrefix) {
+				onlyFiles = append(onlyFiles, file)
+			}
+		}
+	}
+
+	//for _, f := range onlyFiles {
+	//	info, _ := f.Info()
+	//	fmt.Printf("    fs.DirEntry: %v %v\n", f.Name(), info.ModTime())
+	//}
+	//fmt.Printf("----\n")
+
+	return onlyFiles, nil
+}
+
+func CreateDirJson(jfname string, jDir JdirType) error {
+	jsonBytes, err := json.Marshal(jDir)
+	if err != nil {
+		return err
+	}
+	f, err := os.Create(jfname)
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(jsonBytes) //lenght ommited
+	if err != nil {
+		return err
+	}
+	f.Close()
+	return nil
+}
+func UpdateDirJson(fjson string, jDir JdirType) error {
+	var fjson_FileInfo os.FileInfo
+	var err error
+	if fjson_FileInfo, err = os.Stat(fjson); err != nil {
+		return nil // there is now current file
+	}
+	timeExtension := fjson_FileInfo.ModTime().Format("--2006-01-_15-04-05") // Mon Jan 2 15:04:05 -0700 MST 2006
+	fjson_time := fjson + timeExtension
+	if err := os.Rename(fjson, fjson_time); err != nil {
+		return err
+	}
+	if err = CreateDirJson(fjson, jDir); err != nil {
+		return err
+	}
+	return nil
 }
