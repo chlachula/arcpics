@@ -12,16 +12,6 @@ func CrawlDir() {
 
 }
 
-/*
-	func Files(fsys fs.FS) (count int) {
-		fs.WalkDir(fsys, ".", func(path s
-				count++
-			}
-			return nil
-		})
-		return count
-	}
-*/
 func filesInDir(d string) ([]fs.DirEntry, error) {
 	var files []fs.DirEntry
 	var err error

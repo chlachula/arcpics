@@ -116,5 +116,17 @@ func TestAssignPicturesDirectoryWithDatabase(t *testing.T) {
 	if err := gotDb.Close(); err != nil {
 		t.Errorf("error - closing bolt DB: " + err.Error())
 	}
+}
 
+func TestFilesCount(t *testing.T) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	fs, err := ArcpicsFS(picDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	wantCount := 12 // find example/Arc-Pics | wc - 12, including directories
+	gotCount := FilesCount(fs)
+	if wantCount != gotCount {
+		t.Errorf("error - wantCount: %d; gotCount: %d", wantCount, gotCount)
+	}
 }

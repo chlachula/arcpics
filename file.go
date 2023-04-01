@@ -20,7 +20,6 @@ var defaultArcpicsDbLabel = "arcpics-db-label."
 type arcpicsFS struct {
 	dir   string
 	label string
-	//fs    fs.FS
 }
 
 func ArcpicsFS(dir string) (arcpicsFS, error) {
