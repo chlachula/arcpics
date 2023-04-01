@@ -3,38 +3,39 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/boltdb/bolt"
+	"github.com/chlachula/arcpics"
 )
 
 var db *bolt.DB
 
-func directoriesWalk(path string, info os.FileInfo, err error) error {
-	if err != nil {
-		return err
-	}
-
-	if info.IsDir() {
-		fmt.Printf("dir: %v\n", path)
-	} else {
-		if db == nil {
-			panic(fmt.Errorf("db is nil"))
+/*
+	func directoriesWalk(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
 		}
-		if getDbValue(db, FILES_BUCKET, path) == "" {
-			fmt.Printf("     %-20s %10d %10s %10s\n", info.Name(), info.Size(), info.Mode(), info.ModTime())
-			value := info.Name() + "-" + info.ModTime().String()
-			err := putDbValue(db, FILES_BUCKET, path, value)
-			if err != nil {
-				panic(err)
+
+		if info.IsDir() {
+			fmt.Printf("dir: %v\n", path)
+		} else {
+			if db == nil {
+				panic(fmt.Errorf("db is nil"))
 			}
-			fmt.Printf("     added value %s\n", value)
+			if getDbValue(db, FILES_BUCKET, path) == "" {
+				fmt.Printf("     %-20s %10d %10s %10s\n", info.Name(), info.Size(), info.Mode(), info.ModTime())
+				value := info.Name() + "-" + info.ModTime().String()
+				err := putDbValue(db, FILES_BUCKET, path, value)
+				if err != nil {
+					panic(err)
+				}
+				fmt.Printf("     added value %s\n", value)
+			}
 		}
+		return nil
 	}
-	return nil
-}
-
+*/
 var helpText = `=== arcpics: manage archived of pictures not only at external hard drives ===
 Usage arguments:
  [-h] help text
@@ -58,17 +59,25 @@ func main() {
 	}
 	var picturesDirName string
 	var err error
-	picturesDirName, db, err = AssignPicturesDirectoryWithDatabase(os.Args[1:])
+	picturesDirName, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args[1:])
 	if err != nil {
 		help(err.Error())
 		os.Exit(1)
 	}
-
-	err = filepath.Walk(picturesDirName, directoriesWalk)
+	arcFS, err := arcpics.ArcpicsFS(picturesDirName)
 	if err != nil {
-		help(err.Error())
+		fmt.Println("error: " + err.Error())
 		os.Exit(1)
 	}
+	fmt.Println("arcFS.Dir=", arcFS.Dir)
+	arcpics.ArcpicsFilesUpdate(arcFS.Dir)
+	/*
+		err = filepath.Walk(picturesDirName, directoriesWalk)
+		if err != nil {
+			help(err.Error())
+			os.Exit(1)
+		}
+	*/
 
 	defer db.Close()
 
