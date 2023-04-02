@@ -12,12 +12,12 @@ type JfileType = struct {
 	Name    string
 	Size    string
 	Time    string //
-	Comment string
+	Comment string `json:",omitempty"`
 }
 type JdirType = struct {
-	Description string
-	Location    string
-	Files       []JfileType
+	Description string      `json:",omitempty"`
+	Location    string      `json:",omitempty"`
+	Files       []JfileType `json:",omitempty"`
 }
 
 var SYSTEM_BUCKET = []byte("SYSTEM")

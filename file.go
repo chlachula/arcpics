@@ -1,15 +1,19 @@
 package arcpics
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/chlachula/goexif/exif"
 )
 
 // File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
@@ -218,6 +222,15 @@ func readJsonDirData(fname string) (JdirType, error) {
 	err := json.Unmarshal(fileBytes, &userData)
 	return userData, err
 }
+func getJpegComment(fname string) string {
+	file, err := os.Open(fname)
+	if err != nil {
+		fmt.Printf("getJpegComment error opening %s: %s", fname, err.Error())
+		return ""
+	}
+	r := io.Reader(bufio.NewReader(file))
+	return exif.ReadJpegComment(r)
+}
 func makeJdir(d string) (JdirType, error) {
 	var jd JdirType
 	jd.Files = make([]JfileType, 0)
@@ -246,7 +259,11 @@ func makeJdir(d string) (JdirType, error) {
 		file.Name = info.Name()
 		file.Size = fmt.Sprintf("%d", info.Size())
 		file.Time = info.ModTime().Format(timeStampJsonFormat)
-		file.Comment = "my own comment, OK?"
+		if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
+			file.Comment = getJpegComment(filepath.Join(d, file.Name))
+		} else {
+			file.Comment = "my own comment, OK? ReadJpegComment"
+		}
 		jd.Files = append(jd.Files, file)
 	}
 	return jd, nil
