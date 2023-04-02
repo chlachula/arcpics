@@ -39,7 +39,7 @@ func TestDbLabel1(t *testing.T) {
 
 func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
-	wantDbDir := defaultDatabaseDirName
+	wantDbDir := getDatabaseDirName()
 	args := make([]string, 1)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {

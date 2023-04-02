@@ -11,29 +11,10 @@ import (
 
 	"github.com/boltdb/bolt"
 )
-/*
-type JfileType = struct {
-	Name    string
-	Time    string
-	Comment string
-}
-type JdirType = struct {
-	Description string
-	Location    string
-	Files       []JfileType
-}
 
-var SYSTEM_BUCKET = []byte("SYSTEM")
-var FILES_BUCKET = []byte("FILES")
-var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
-var defaultPicturesDirName = "Arc-Pics"
-var defaultDatabaseDirName = "DB"
-var defaultArcpicsDbLabel = "arcpics-db-label."
-var jsonFilePrefix = "sample.json"
-*/
 func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := defaultPicturesDirName
-	databaseDirName := defaultDatabaseDirName
+	databaseDirName := getDatabaseDirName()
 
 	if len(args) < 2 {
 		return picturesDirName, databaseDirName
@@ -48,12 +29,37 @@ func picturesAndDatabaseDirectories(args []string) (string, string) {
 	}
 	return picturesDirName, databaseDirName
 }
+func dirExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
 	}
 	return !info.IsDir()
+}
+func getDatabaseDirName() string {
+	var userHomeDir string = "."
+	var err error
+	userHomeDir, err = os.UserHomeDir()
+	if err != nil {
+		fmt.Println("Error getting UserHomeDir: " + err.Error())
+	}
+	databaseDirName := filepath.Join(userHomeDir, ".arcpics")
+	if !dirExists(databaseDirName) {
+		err = os.Mkdir(databaseDirName, 0755)
+		if err != nil {
+			fmt.Printf("Error creating directory %s :%s \n", databaseDirName, err.Error())
+		} else {
+			fmt.Printf("Directory %s created.\n", databaseDirName)
+		}
+	}
+	return databaseDirName
 }
 func insertSystemLabelValue(db *bolt.DB, value string) error {
 	//return insertDbValue(db, SYSTEM_BUCKET, keyBytes)
@@ -160,6 +166,7 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 	}
 	return picturesDirName, db, nil
 }
+
 /*
 func filesInDir(d string) ([]fs.DirEntry, error) {
 	var files []fs.DirEntry
