@@ -11,6 +11,7 @@ line:
 var defaultArcpicsDbLabel = "arcpics-db-label."
 var defaultPicturesDirName = "Arc-Pics"
 var defaultDatabaseDirName = "DB"
+var dotArcpics = ".arcpics"
 
 var SYSTEM_BUCKET = []byte("SYSTEM")
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"

@@ -25,8 +25,6 @@ import (
 // ArcpicsFS work fine with fs.WalkDir unless there are any file operations
 // Then use filepath.WalkDir(arcpicsFS.Dir,...
 
-var defaultArcpicsDbLabel = "arcpics-db-label."
-
 type arcpicsFS struct {
 	Dir   string
 	Label string
@@ -188,7 +186,7 @@ func ArcpicsFilesUpdate(dir string) error {
 		}
 		return nil
 	})
-	fmt.Printf("new or updated dirs: %v\n", changedDirs)
+	//fmt.Printf("new or updated dirs: %v\n", changedDirs)
 	fmt.Printf("ArcpicsFilesUpdate: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
 	return nil
 }
@@ -321,4 +319,58 @@ func UpdateDirJson(fjson string, jDir JdirType) error {
 		return err
 	}
 	return nil
+}
+
+// CopyDirFromTo copies the content of Src to Dst.
+func CopyDirFromTo(fromSrc, toDst string) error {
+
+	return filepath.Walk(fromSrc, func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// copy to this path
+		outpath := filepath.Join(toDst, strings.TrimPrefix(path, fromSrc))
+
+		if info.IsDir() {
+			os.MkdirAll(outpath, info.Mode())
+			return nil // means recursive
+		}
+
+		// handle irregular files
+		if !info.Mode().IsRegular() {
+			switch info.Mode().Type() & os.ModeType {
+			case os.ModeSymlink:
+				link, err := os.Readlink(path)
+				if err != nil {
+					return err
+				}
+				return os.Symlink(link, outpath)
+			}
+			return nil
+		}
+
+		// copy contents of regular file efficiently
+
+		// open input
+		in, _ := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+
+		// create output
+		fh, err := os.Create(outpath)
+		if err != nil {
+			return err
+		}
+		defer fh.Close()
+
+		// make it the same
+		fh.Chmod(info.Mode())
+
+		// copy content
+		_, err = io.Copy(fh, in)
+		return err
+	})
 }

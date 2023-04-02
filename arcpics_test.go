@@ -51,7 +51,8 @@ func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 }
 func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	wantPicDir := "ABCD"
-	wantDbDir := defaultDatabaseDirName
+	//	wantDbDir := defaultDatabaseDirName
+	wantDbDir := getDatabaseDirName()
 	args := make([]string, 2)
 	args[1] = wantPicDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
@@ -124,7 +125,7 @@ func TestFilesCount(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	wantCount := 12 // find example/Arc-Pics | wc - 12, including directories
+	wantCount := 13 // find example/Arc-Pics | wc - 13, including directories
 	gotCount := FilesCount(fs)
 	if wantCount != gotCount {
 		t.Errorf("error - wantCount: %d; gotCount: %d", wantCount, gotCount)
@@ -137,7 +138,7 @@ func TestDirFilesCount(t *testing.T) {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
 	wantDirCount := 5   // find example/Arc-Pics -type d | wc .. 5 directories
-	wantFilesCount := 7 // find example/Arc-Pics -type f | wc .. 7 files
+	wantFilesCount := 8 // find example/Arc-Pics -type f | wc .. 8 files
 	gotDirCount, gotFilesCount := DirFilesCount(fs)
 	if wantDirCount != gotDirCount {
 		t.Errorf("error - wantDirCount: %d; gotDirCount: %d", wantDirCount, gotDirCount)
@@ -161,7 +162,14 @@ func TestDirCount(t *testing.T) {
 
 // go test -run TestArcpicsFilesUpdate
 func TestArcpicsFilesUpdate(t *testing.T) {
-	arcDir := filepath.Join("example", defaultPicturesDirName)
+	//arcDir := filepath.Join("example", defaultPicturesDirName)
+	arcDir, err := makeAndPopulateTempPicDir()
+	if err != nil {
+		t.Errorf("error - makeAndPopulateTempPicDir: " + err.Error())
+	}
+
+	defer os.RemoveAll(arcDir)
+
 	fs, err := ArcpicsFS(arcDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
@@ -183,4 +191,17 @@ func TestPurgeJson__(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - Purge: " + err.Error())
 	}
+}
+
+func makeAndPopulateTempPicDir() (string, error) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	wantPicDir, err := os.MkdirTemp("", "test-arcpics-dir-*")
+	if err != nil {
+		return wantPicDir, err
+	}
+	err = CopyDirFromTo(picDir, wantPicDir)
+	if err != nil {
+		return wantPicDir, err
+	}
+	return wantPicDir, nil
 }
