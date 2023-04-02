@@ -171,3 +171,16 @@ func TestArcpicsFilesUpdate(t *testing.T) {
 		t.Errorf("error - ArcpicsFilesUpdate: " + err.Error())
 	}
 }
+
+// go test -run TestPurgeJson__
+func TestPurgeJson__(t *testing.T) {
+	arcDir := filepath.Join("example", defaultPicturesDirName)
+	arcFS, err := ArcpicsFS(arcDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	err = PurgeJson__(arcFS.Dir)
+	if err != nil {
+		t.Errorf("error - Purge: " + err.Error())
+	}
+}

@@ -107,7 +107,33 @@ func DirCount(fsys fs.FS) (countDir int) {
 	})
 	return countDir
 }
-
+func jDirIsEqual(a, b JdirType) bool {
+	if a.Description != b.Description {
+		return false
+	}
+	if a.Location != b.Location {
+		return false
+	}
+	if len(a.Files) != len(b.Files) {
+		return false
+	}
+	for i, af := range a.Files {
+		if af.Comment != b.Files[i].Comment {
+			return false
+		}
+		if af.Name != b.Files[i].Name {
+			return false
+		}
+		if af.Size != b.Files[i].Size {
+			return false
+		}
+		if af.Time != b.Files[i].Time {
+			fmt.Printf("jDirIsEqual %d. file a.time=%s, b.time=%s", i, af.Time, b.Files[i].Time)
+			return false
+		}
+	}
+	return true
+}
 func ArcpicsFilesUpdate(dir string) error {
 	countDir := 0
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -118,10 +144,7 @@ func ArcpicsFilesUpdate(dir string) error {
 		if d.IsDir() {
 			countDir++
 			var jDir JdirType
-			//absPath, _ := filepath.Abs(path)
 			fjson := filepath.Join(path, jsonFilePrefix)
-			fmt.Printf("ArcpicsFilesUpdate: %s \n", fjson)
-			//_ = jDir
 
 			if jDir, err = makeJdir(path); err != nil {
 				return err
@@ -130,13 +153,20 @@ func ArcpicsFilesUpdate(dir string) error {
 			if !fileExists(fjson) {
 				if err = CreateDirJson(fjson, jDir); err != nil {
 					return err
-				}
-				if err = CreateDirJson(fjson, jDir); err != nil {
-					return err
+				} else {
+					fmt.Printf("Arcpics - created: %s \n", fjson)
 				}
 			} else {
-				if err = UpdateDirJson(fjson, jDir); err != nil {
-					return err
+				currentJDir, err := readJsonDirData(fjson)
+				if err != nil {
+					fmt.Printf("error reading file %s\n %s\n", fjson, err.Error())
+				}
+				if !jDirIsEqual(currentJDir, jDir) {
+					if err = UpdateDirJson(fjson, jDir); err != nil {
+						return err
+					} else {
+						fmt.Printf("Arcpics - updated: %s \n", fjson)
+					}
 				}
 			}
 			if err != nil {
@@ -149,7 +179,31 @@ func ArcpicsFilesUpdate(dir string) error {
 	fmt.Printf("ArcpicsFilesUpdate: %d directories\n", countDir)
 	return nil
 }
-func readUserData(fname string) (JdirType, error) {
+func PurgeJson__(dir string) error {
+	doExt_toBeRemoved := ".json--"
+	count := 0
+	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			println("fs.SkipDir", path)
+			return fs.SkipDir
+		}
+		if !d.IsDir() {
+			ext := filepath.Ext(d.Name())
+			if strings.HasPrefix(ext, doExt_toBeRemoved) {
+				if err := os.Remove(path); err == nil {
+					fmt.Printf("Removed: %s\n", path)
+					count++
+				} else {
+					fmt.Printf("error removing file %s\n %s\n", path, err.Error())
+				}
+			}
+		}
+		return nil
+	})
+	fmt.Printf("Dir root: %s\nPurge count: %d\n", dir, count)
+	return nil
+}
+func readJsonDirData(fname string) (JdirType, error) {
 	var userData JdirType
 	fileBytes, _ := os.ReadFile(fname)
 	err := json.Unmarshal(fileBytes, &userData)
@@ -162,14 +216,12 @@ func makeJdir(d string) (JdirType, error) {
 	jd.Location = "here could be a description from file " + jsonUserData
 	userFile := filepath.Join(d, jsonUserData)
 	if fileExists(userFile) {
-		userData, err := readUserData(userFile)
+		userData, err := readJsonDirData(userFile)
 		if err == nil {
 			jd.Description = userData.Description
 			jd.Location = userData.Location
 		} else {
-			fmt.Println("-FFFF", userFile)
 			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
-			fmt.Println("\n-END")
 		}
 	}
 
@@ -183,7 +235,8 @@ func makeJdir(d string) (JdirType, error) {
 		info, _ := f.Info()
 		var file JfileType
 		file.Name = info.Name()
-		file.Time = info.ModTime().Format("2006-01-02_15:04:05")
+		file.Size = fmt.Sprintf("%d", info.Size())
+		file.Time = info.ModTime().Format(timeStampJsonFormat)
 		file.Comment = "my own comment, OK?"
 		jd.Files = append(jd.Files, file)
 	}
@@ -222,15 +275,9 @@ func CreateDirJson(jfname string, jDir JdirType) error {
 	if jsonBytes, err = prettyprint(jsonBytes); err != nil {
 		return err
 	}
-	f, err := os.Create(jfname)
-	if err != nil {
+	if err := os.WriteFile(jfname, jsonBytes, 0666); err != nil {
 		return err
 	}
-	_, err = f.Write(jsonBytes) //lenght ommited
-	if err != nil {
-		return err
-	}
-	f.Close()
 	return nil
 }
 func UpdateDirJson(fjson string, jDir JdirType) error {

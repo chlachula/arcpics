@@ -10,7 +10,8 @@ line:
 
 type JfileType = struct {
 	Name    string
-	Time    string
+	Size    string
+	Time    string //
 	Comment string
 }
 type JdirType = struct {
@@ -26,3 +27,4 @@ var defaultPicturesDirName = "Arc-Pics"
 var defaultDatabaseDirName = "DB"
 var jsonFilePrefix = "sample.json"
 var jsonUserData = "arcpics-user-data.json"
+var timeStampJsonFormat = "2006-01-02_15:04:05.99"
