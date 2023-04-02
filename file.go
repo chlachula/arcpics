@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
@@ -135,7 +136,11 @@ func jDirIsEqual(a, b JdirType) bool {
 	return true
 }
 func ArcpicsFilesUpdate(dir string) error {
+	startTime := time.Now()
 	countDir := 0
+	countCreate := 0
+	countUpdate := 0
+	changedDirs := make([]string, 0)
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println("fs.SkipDir", path)
@@ -155,6 +160,8 @@ func ArcpicsFilesUpdate(dir string) error {
 					return err
 				} else {
 					fmt.Printf("Arcpics - created: %s \n", fjson)
+					changedDirs = append(changedDirs, path)
+					countCreate++
 				}
 			} else {
 				currentJDir, err := readJsonDirData(fjson)
@@ -166,6 +173,8 @@ func ArcpicsFilesUpdate(dir string) error {
 						return err
 					} else {
 						fmt.Printf("Arcpics - updated: %s \n", fjson)
+						changedDirs = append(changedDirs, path)
+						countUpdate++
 					}
 				}
 			}
@@ -175,8 +184,8 @@ func ArcpicsFilesUpdate(dir string) error {
 		}
 		return nil
 	})
-
-	fmt.Printf("ArcpicsFilesUpdate: %d directories\n", countDir)
+	fmt.Printf("new or updated dirs: %v\n", changedDirs)
+	fmt.Printf("ArcpicsFilesUpdate: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
 	return nil
 }
 func PurgeJson__(dir string) error {
