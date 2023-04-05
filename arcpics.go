@@ -2,6 +2,7 @@ package arcpics
 
 import (
 	//"encoding/json"
+
 	"fmt"
 	//"io/fs"
 	"log"
@@ -36,7 +37,13 @@ func dirExists(filename string) bool {
 	}
 	return info.IsDir()
 }
+
+// returns exists and isFile
 func fileExists(filename string) bool {
+	_, err := os.OpenFile(filename, os.O_RDONLY, 0600)
+	return !os.IsNotExist(err)
+}
+func _fileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
@@ -50,7 +57,7 @@ func getDatabaseDirName() string {
 	if err != nil {
 		fmt.Println("Error getting UserHomeDir: " + err.Error())
 	}
-	databaseDirName := filepath.Join(userHomeDir, ".arcpics")
+	databaseDirName := filepath.Join(userHomeDir, dotArcpics)
 	if !dirExists(databaseDirName) {
 		err = os.Mkdir(databaseDirName, 0755)
 		if err != nil {

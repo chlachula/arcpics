@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/chlachula/arcpics"
@@ -53,13 +54,16 @@ func help(msg string) {
 	fmt.Println(helpText)
 }
 func main() {
+	defer func(start time.Time) {
+		fmt.Printf("Elapsed time %s\n", time.Since(start))
+	}(time.Now())
 	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-h") {
 		help("")
 		os.Exit(0)
 	}
 	var picturesDirName string
 	var err error
-	picturesDirName, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args[1:])
+	picturesDirName, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args)
 	if err != nil {
 		help(err.Error())
 		os.Exit(1)

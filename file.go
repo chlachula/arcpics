@@ -48,6 +48,33 @@ func (afs arcpicsFS) Open(name string) (fs.File, error) {
 	}
 	return f, nil
 }
+func (afs arcpicsFS) DirPaths() ([]string, error) {
+	paths := make([]string, 0)
+	fs.WalkDir(afs, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			println("fs.SkipDir", path)
+			return fs.SkipDir
+		}
+		if d.IsDir() {
+			paths = append(paths, path)
+			fmt.Printf("DirPaths-: %3db  %s\n", len(path), path)
+		}
+		return nil
+	})
+	return paths, nil
+}
+
+func (afs arcpicsFS) DirPathsUpdate() error {
+	paths, err := afs.DirPaths()
+	if err != nil {
+		return err
+	}
+	for i, path := range paths {
+		dir := filepath.Join(afs.Dir, path)
+		fmt.Printf("%2d. path: %s\n", i, dir)
+	}
+	return nil
+}
 func getLabel(archiveDir string) (string, error) {
 	nameStart := defaultArcpicsDbLabel
 	label := ""
@@ -96,7 +123,8 @@ func DirFilesCount(fsys fs.FS) (int, int) {
 	})
 	return countDir, countFiles
 }
-func DirCount(fsys fs.FS) (countDir int) {
+func DirCount(fsys fs.FS) (countDir int, totalPathLength int) {
+	total := 0
 	fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println("fs.SkipDir", path)
@@ -104,11 +132,12 @@ func DirCount(fsys fs.FS) (countDir int) {
 		}
 		if d.IsDir() {
 			countDir++
-			fmt.Printf("DirCount:  #%3d - %s\n", countDir, path)
+			total += len(path)
+			fmt.Printf("DirCount:  #%3d %3d - %s\n", countDir, len(path), path)
 		}
 		return nil
 	})
-	return countDir
+	return countDir, total
 }
 func jDirIsEqual(a, b JdirType) bool {
 	if a.Description != b.Description {
@@ -151,6 +180,7 @@ func ArcpicsFilesUpdate(dir string) error {
 		if d.IsDir() {
 			countDir++
 			var jDir JdirType
+			jDirTimeStart := time.Now()
 			fjson := filepath.Join(path, jsonFilePrefix)
 
 			if jDir, err = makeJdir(path); err != nil {
@@ -161,7 +191,7 @@ func ArcpicsFilesUpdate(dir string) error {
 				if err = CreateDirJson(fjson, jDir); err != nil {
 					return err
 				} else {
-					fmt.Printf("Arcpics - created: %s \n", fjson)
+					fmt.Printf("Arcpics - created: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), fjson)
 					changedDirs = append(changedDirs, path)
 					countCreate++
 				}
@@ -174,7 +204,7 @@ func ArcpicsFilesUpdate(dir string) error {
 					if err = UpdateDirJson(fjson, jDir); err != nil {
 						return err
 					} else {
-						fmt.Printf("Arcpics - updated: %s \n", fjson)
+						fmt.Printf("Arcpics - updated: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), fjson)
 						changedDirs = append(changedDirs, path)
 						countUpdate++
 					}

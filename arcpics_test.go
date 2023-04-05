@@ -40,6 +40,7 @@ func TestDbLabel1(t *testing.T) {
 func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
 	wantDbDir := getDatabaseDirName()
+	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 1)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
@@ -53,6 +54,7 @@ func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	wantPicDir := "ABCD"
 	//	wantDbDir := defaultDatabaseDirName
 	wantDbDir := getDatabaseDirName()
+	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 2)
 	args[1] = wantPicDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
@@ -149,14 +151,49 @@ func TestDirFilesCount(t *testing.T) {
 }
 func TestDirCount(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
+	// picDir := filepath.Join("D:\\pics", "Arc")
+	// picDir := filepath.Join("C:\\Users\\Josef", "Pictures")
+	// picDir := filepath.Join("E:", "Arc-Pics") // 2023-0402  gotDirCount: 3983 totalPathLenght:75914
 	fs, err := ArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
 	wantDirCount := 5 // find example/Arc-Pics -type d | wc .. 5 directories
-	gotDirCount := DirCount(fs)
+	gotDirCount, totalPathLength := DirCount(fs)
+	println("Root of Dirs: ", picDir)
+	println("Dirs count:", gotDirCount, "- total path lenght:", totalPathLength)
 	if wantDirCount != gotDirCount {
-		t.Errorf("error - wantDirCount: %d; gotDirCount: %d", wantDirCount, gotDirCount)
+		t.Errorf("error - wantDirCount: %d; gotDirCount: %d totalPathLenght:%d", wantDirCount, gotDirCount, totalPathLength)
+	}
+}
+
+func TestDirPaths(t *testing.T) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	afs, err := ArcpicsFS(picDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	wantLenPaths := 5 // find example/Arc-Pics -type d | wc .. 5 directories
+	gotPaths, err := afs.DirPaths()
+	if err != nil {
+		t.Errorf("error - DirPaths: %s", err.Error())
+	}
+	gotLenPaths := len(gotPaths)
+	println("Root of Dirs: ", picDir)
+	if wantLenPaths != gotLenPaths {
+		t.Errorf("error - wantLenPaths: %d; gotLenPaths: %d", wantLenPaths, gotLenPaths)
+	}
+}
+
+func TestDirPathsUpdate(t *testing.T) {
+	picDir := filepath.Join("example", defaultPicturesDirName)
+	afs, err := ArcpicsFS(picDir)
+	if err != nil {
+		t.Errorf("error - ArcpicsFS: " + err.Error())
+	}
+	err = afs.DirPathsUpdate()
+	if err != nil {
+		t.Errorf("error - DirPathsUpdate: %s", err.Error())
 	}
 }
 
