@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chlachula/arcpics/jpeg"
 	"github.com/chlachula/goexif/exif"
 )
 
@@ -143,6 +144,9 @@ func jDirIsEqual(a, b JdirType) bool {
 	if a.Description != b.Description {
 		return false
 	}
+	if a.MostComment != b.MostComment {
+		return false
+	}
 	if a.Location != b.Location {
 		return false
 	}
@@ -250,7 +254,7 @@ func readJsonDirData(fname string) (JdirType, error) {
 	err := json.Unmarshal(fileBytes, &userData)
 	return userData, err
 }
-func getJpegComment(fname string) string {
+func getJpegComment0(fname string) string {
 	file, err := os.Open(fname)
 	if err != nil {
 		fmt.Printf("getJpegComment error opening %s: %s", fname, err.Error())
@@ -258,6 +262,12 @@ func getJpegComment(fname string) string {
 	}
 	r := io.Reader(bufio.NewReader(file))
 	return exif.ReadJpegComment(r)
+}
+func getJpegComment(fname string) string {
+	var j jpeg.JpegReader
+	j.Open(fname, false) // verbose=false
+	j.Decode()
+	return j.Comment
 }
 func makeJdir(d string) (JdirType, error) {
 	var jd JdirType
@@ -280,7 +290,8 @@ func makeJdir(d string) (JdirType, error) {
 	if files, err = filesInDir(d); err != nil {
 		return jd, err
 	}
-
+	// find most occuring comment
+	counter := map[string]int{}
 	for _, f := range files {
 		info, _ := f.Info()
 		var file JfileType
@@ -292,7 +303,20 @@ func makeJdir(d string) (JdirType, error) {
 		} else {
 			file.Comment = "my own comment, OK? ReadJpegComment"
 		}
+		counter[file.Comment]++
 		jd.Files = append(jd.Files, file)
+	}
+
+	vMax := 0
+	kMax := ""
+	for k, v := range counter {
+		if v > vMax {
+			vMax = v
+			kMax = k
+		}
+	}
+	if kMax != "" {
+		jd.MostComment = fmt.Sprintf("%s: %d/%d", kMax, vMax, len(jd.Files))
 	}
 	return jd, nil
 }

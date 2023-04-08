@@ -10,7 +10,6 @@ line:
 
 var defaultArcpicsDbLabel = "arcpics-db-label."
 var defaultPicturesDirName = "Arc-Pics"
-var defaultDatabaseDirName = "DB"
 var dotArcpics = ".arcpics"
 
 var SYSTEM_BUCKET = []byte("SYSTEM")
@@ -29,6 +28,7 @@ type JfileType = struct {
 }
 type JdirType = struct {
 	Description string      `json:",omitempty"`
+	MostComment string      `json:",omitempty"`
 	Location    string      `json:",omitempty"`
 	Files       []JfileType `json:",omitempty"`
 }
