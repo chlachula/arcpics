@@ -1,0 +1,239 @@
+// Package jpeg implements decoding of jpeg file
+package jpeg
+
+import (
+	"bufio"
+	"encoding/binary"
+	"fmt"
+	"os"
+)
+
+/*
+https://github.com/Matthias-Wandel/jhead/blob/master/jhead.h
+#define M_SOF0  0xC0          // Start Of Frame N
+#define M_SOF1  0xC1          // N indicates which compression process
+#define M_SOF2  0xC2          // Only SOF0-SOF2 are now in common use
+#define M_SOF3  0xC3
+#define M_SOF5  0xC5          // NB: codes C4 and CC are NOT SOF markers
+#define M_SOF6  0xC6
+#define M_SOF7  0xC7
+#define M_SOF9  0xC9
+#define M_SOF10 0xCA
+#define M_SOF11 0xCB
+#define M_SOF13 0xCD
+#define M_SOF14 0xCE
+#define M_SOF15 0xCF
+#define M_SOI   0xD8          // Start Of Image (beginning of datastream)
+#define M_EOI   0xD9          // End Of Image (end of datastream)
+#define M_SOS   0xDA          // Start Of Scan (begins compressed data)
+#define M_JFIF  0xE0          // Jfif marker
+#define M_EXIF  0xE1          // Exif marker.  Also used for XMP data!
+#define M_XMP   0x10E1        // Not a real tag (same value in file as Exif!)
+#define M_COM   0xFE          // COMment
+#define M_DQT   0xDB          // Define Quantization Table
+#define M_DHT   0xC4          // Define Huffmann Table
+#define M_DRI   0xDD
+#define M_IPTC  0xED
+
+SOI	0xFF, 0xD8			none			Start of Image
+S0F0	0xFF, 0xC0		variable size	Start of Frame
+S0F2	0xFF, 0xC2		variable size	Start fo Frame
+DHT	0xFF, 0xC4			variable size	Define Huffman Tables
+DQT	0xFF, 0xDB			variable size	Define Quantization Table(s)
+DRI	0xFF, 0xDD			4 bytes	Define Restart Interval
+SOS	0xFF, 0xDA			variable size	Start Of Scan
+APPn	0xFF, 0xE//n//	variable size	Application specific
+COM	0xFF, 0xFE			variable size	Comment
+RSTn	0xFF, 0xD//n//(//n//#0..7)	none	Restart
+EOI	0xFF, 0xD9			none End Of Image
+*/
+const (
+	//after 0xFF
+	ff_SOI  = 0xD8 // start of image
+	ff_SOF0 = 0xC0 // start of frame
+	ff_SOF2 = 0xC2 // start of frame
+	ff_DHT  = 0xC4 // define Huffman tables
+	ff_DQT  = 0xDB // define Quantization table(s)
+	ff_DRI  = 0xDD // 4 bytes define restart interval
+	ff_EOI  = 0xD9 // end of image
+	ff_SOS  = 0xDA // start of scan
+	ff_RST0 = 0xD0 // restart 0
+	ff_RST1 = 0xD1 // restart 1
+	ff_RST2 = 0xD2 // restart 2
+	ff_RST3 = 0xD3 // restart 3
+	ff_RST4 = 0xD4 // restart 4
+	ff_RST5 = 0xD5 // restart 5
+	ff_RST6 = 0xD6 // restart 6
+	ff_RST7 = 0xD7 // restart 7
+	ff_APP1 = 0xE1 // EXIF, next two byte are SIZE
+	ff_APP2 = 0xE2 // application #2
+	ff_COMM = 0xFE // comment,  next two byte are SIZE
+
+)
+
+type JpegReader struct {
+	Filename    string
+	br          *bufio.Reader
+	ImageHeight int
+	ImageWidth  int
+	Comment     string
+	verbose     bool
+	maxCounter  int // just to develop and debug
+	charCounter int
+}
+
+func (j *JpegReader) Open(fname string, verbose bool) error {
+	j.maxCounter = 0x6dbe + 0x0a00 + 320000000 // just to develop and debug
+	file, err := os.Open(fname)
+	j.Filename = fname
+	if err != nil {
+		return err
+	}
+	j.br = bufio.NewReader(file)
+	j.verbose = verbose
+	return nil
+}
+
+func (j *JpegReader) NextByte() byte {
+	b, err := j.br.ReadByte()
+	if err != nil {
+		panic(err)
+	}
+	//if j.charCounter > j.maxCounter {
+	//	pa nic("char limit over")
+	//}
+	j.charCounter++
+	return b
+}
+
+func (j *JpegReader) SegmentLength() int {
+	dataLenBytes := make([]byte, 2)
+	dataLenBytes[0] = j.NextByte()
+	dataLenBytes[1] = j.NextByte()
+	return int(binary.BigEndian.Uint16(dataLenBytes))
+}
+func (j *JpegReader) Bytes(length int) []byte {
+	data := make([]byte, length)
+	for i := 0; i < length; i++ {
+		data[i] = j.NextByte()
+	}
+	return data
+}
+func (j *JpegReader) PrintMark(markName string, m byte) {
+	if j.verbose {
+		fmt.Printf("\n%06x %s %02x ", j.charCounter, markName, m)
+	}
+}
+func (j *JpegReader) PrintMarkLength(markName string, m byte) {
+	j.PrintMark(markName, m)
+	length := j.SegmentLength()
+	data := j.Bytes(length - 2)
+	if j.verbose {
+		fmt.Printf(" %04x -2=%d ", length, len(data))
+	}
+}
+
+func (j *JpegReader) PrintMarkComment(markName string, m byte) {
+	j.PrintMark(markName, m)
+	length := j.SegmentLength()
+	data := j.Bytes(length - 2)
+	j.Comment = string(data)
+	if j.verbose {
+		fmt.Printf(" %04x -2=%d %s", length, len(data), j.Comment)
+	}
+}
+func (j *JpegReader) PrintMarkStartOfFrame0(markName string, m byte) {
+	j.PrintMark(markName, m)
+	length := j.SegmentLength()
+	data := j.Bytes(length - 2)
+	j.ImageHeight = int(binary.BigEndian.Uint16(data[1:3]))
+	j.ImageWidth = int(binary.BigEndian.Uint16(data[3:5]))
+	if j.verbose {
+		fmt.Printf(" %04x -2=%d %s", length, len(data), j.Comment)
+	}
+}
+
+func (j *JpegReader) ScanToFFmark() byte {
+	c := j.NextByte()
+	if j.verbose {
+		fmt.Printf("\n%06x SSS %02x = char after ff,  Scan now\n", j.charCounter, c)
+	}
+	for {
+		for c != 0xff {
+			c = j.NextByte()
+		}
+		switch m := j.NextByte(); m {
+		case 0xFF:
+			j.PrintMark("FFF", m)
+			c = j.NextByte()
+			if c == 0x00 {
+				c = j.NextByte()
+			}
+		case ff_RST0, ff_RST1, ff_RST2, ff_RST3, ff_RST4, ff_RST5, ff_RST6, ff_RST7: //restart
+			//j.PrintMark("RST", m)
+			c = j.NextByte()
+		case 0x00:
+			c = j.NextByte()
+		default:
+			return m
+		}
+	}
+}
+
+func (j *JpegReader) Decode() error {
+	cff := j.NextByte()
+	if cff != 0xFF {
+		return fmt.Errorf("file %s is not JPEG, does not start by 0xFF, but %02x", j.Filename, cff)
+	}
+	m := j.NextByte()
+	if m != ff_SOI {
+		return fmt.Errorf("not JPEG, does not start by 0xFF%02x, but 0xFF%02x", ff_SOI, m)
+	}
+	cff = j.NextByte()
+	scan := false
+	for cff == 0xff {
+		if scan {
+			m = j.ScanToFFmark()
+			scan = false
+		} else {
+			m = j.NextByte()
+		}
+		switch m {
+		case ff_SOF0, ff_SOF2: //start of frame
+			j.PrintMarkStartOfFrame0("SOF", m)
+		case ff_DHT: // define Huffman tables
+			j.PrintMarkLength("DHT", m)
+		case ff_DQT: // define Quantization table(s)
+			j.PrintMarkLength("DQT", m)
+		case ff_DRI: // 4 bytes define restart interval
+			j.PrintMark("DRI", m)
+		case ff_APP1: // EXIF, next two byte are SIZE
+			j.PrintMarkLength("AP1", m)
+		case ff_APP2: // application #2
+			j.PrintMark("AP2", m)
+		case ff_COMM: // comment,  next two byte are SIZE
+			j.PrintMarkComment("COM", m)
+		case ff_SOS: // start of scan
+			j.PrintMarkLength("SOS", m)
+			scan = true
+		case ff_EOI: // end of image
+			j.PrintMark("EOI", m)
+			//return
+		default:
+			store := j.verbose
+			j.verbose = true
+			j.PrintMark("???", m)
+			j.verbose = store
+		}
+		if m == ff_EOI {
+			break
+		}
+		if !scan {
+			cff = j.NextByte()
+		}
+	}
+	if j.verbose {
+		fmt.Printf("\n%06x KON %02x KON-EC SMYCKY scan=%t\n", j.charCounter, cff, scan)
+	}
+	return nil
+}
