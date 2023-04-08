@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -24,11 +25,15 @@ func find(root, ext string) []string {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("No directory argument")
+		os.Exit(1)
+	}
+	dir := os.Args[1]
 	defer func(start time.Time) {
 		fmt.Printf("Elapsed time %s\n", time.Since(start))
 	}(time.Now())
-	//	files := find("/home/josef/go/others/jhead", ".jpg")
-	files := find("/home/josef/Dell-D-drive/debug/", ".jpg")
+	files := find(dir, ".jpg")
 	for _, fname := range files {
 		var j jpeg.JpegReader
 		verbose := false
