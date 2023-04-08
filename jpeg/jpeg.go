@@ -65,8 +65,11 @@ const (
 	ff_RST5 = 0xD5 // restart 5
 	ff_RST6 = 0xD6 // restart 6
 	ff_RST7 = 0xD7 // restart 7
+	ff_APP0 = 0xE0 // application #0
 	ff_APP1 = 0xE1 // EXIF, next two byte are SIZE
 	ff_APP2 = 0xE2 // application #2
+	ff_APP4 = 0xE4 // application #4
+	ff_APPD = 0xED // application #D
 	ff_COMM = 0xFE // comment,  next two byte are SIZE
 
 )
@@ -229,15 +232,22 @@ func (j *JpegReader) Decode() error {
 			j.PrintMarkLength("DQT", m)
 		case ff_DRI: // 4 bytes define restart interval
 			j.PrintMark("DRI", m)
+		case ff_APP0: // application #0
+			j.PrintMark("AP0", m)
 		case ff_APP1: // EXIF, next two byte are SIZE
 			j.PrintMarkLength("AP1", m)
 		case ff_APP2: // application #2
 			j.PrintMark("AP2", m)
+		case ff_APP4: // application #4
+			j.PrintMark("AP4", m)
+		case ff_APPD: // application #D
+			j.PrintMark("APD", m)
 		case ff_COMM: // comment,  next two byte are SIZE
 			j.PrintMarkComment("COM", m)
 		case ff_SOS: // start of scan
 			j.PrintMarkLength("SOS", m)
 			scan = true
+			return nil // let's skip scan
 		case ff_EOI: // end of image
 			j.PrintMark("EOI", m)
 			//return
