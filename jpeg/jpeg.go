@@ -112,40 +112,62 @@ func (j *JpegReader) SegmentLength() int {
 	dataLenBytes[1] = j.NextByte()
 	return int(binary.BigEndian.Uint16(dataLenBytes))
 }
-func (j *JpegReader) Bytes(length int) []byte {
-	data := make([]byte, length)
+func (j *JpegReader) Bytes0(length int) ([]byte, error) {
+	var data []byte
+	data = make([]byte, length)
 	for i := 0; i < length; i++ {
 		data[i] = j.NextByte()
 	}
-	return data
+	return data, nil
+}
+func (j *JpegReader) Bytes(length int) ([]byte, error) {
+	var data []byte
+	nread := 0
+	for nread < length {
+		s := make([]byte, length-nread)
+		n, err := j.br.Read(s)
+		nread += n
+		if err != nil { //&& nread < length {
+			j.charCounter += nread
+			return nil, err
+		}
+		data = append(data, s[:n]...)
+	}
+	j.charCounter += nread
+	return data, nil
 }
 func (j *JpegReader) PrintMark(markName string, m byte) {
 	if j.verbose {
 		fmt.Printf("\n%06x %s %02x ", j.charCounter, markName, m)
 	}
 }
-func (j *JpegReader) PrintMarkLength(markName string, m byte) {
+
+func (j *JpegReader) PrintMarkAndGetData(markName string, m byte) (int, []byte) {
 	j.PrintMark(markName, m)
 	length := j.SegmentLength()
-	data := j.Bytes(length - 2)
+	data, err := j.Bytes(length - 2)
+	if err != nil {
+		fmt.Printf("error at file %s: %s\n", j.Filename, err.Error())
+	}
+	return length, data
+}
+
+func (j *JpegReader) PrintMarkLength(markName string, m byte) {
+	length, data := j.PrintMarkAndGetData(markName, m)
 	if j.verbose {
 		fmt.Printf(" %04x -2=%d ", length, len(data))
 	}
 }
 
 func (j *JpegReader) PrintMarkComment(markName string, m byte) {
-	j.PrintMark(markName, m)
-	length := j.SegmentLength()
-	data := j.Bytes(length - 2)
+	length, data := j.PrintMarkAndGetData(markName, m)
 	j.Comment = string(data)
 	if j.verbose {
 		fmt.Printf(" %04x -2=%d %s", length, len(data), j.Comment)
 	}
 }
 func (j *JpegReader) PrintMarkStartOfFrame0(markName string, m byte) {
-	j.PrintMark(markName, m)
-	length := j.SegmentLength()
-	data := j.Bytes(length - 2)
+	length, data := j.PrintMarkAndGetData(markName, m)
 	j.ImageHeight = int(binary.BigEndian.Uint16(data[1:3]))
 	j.ImageWidth = int(binary.BigEndian.Uint16(data[3:5]))
 	if j.verbose {
