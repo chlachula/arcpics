@@ -3,7 +3,7 @@
 # Application 
 to manage archived pictures and/or any other files on external devices like hard drives, USB sticks, memory cards, etc.
 
-
+```
 Usage arguments:
  -h help text
  -u picturesDirName       #update arcpics.json dir files
@@ -20,5 +20,5 @@ Examples:
 -c /media/joe/USB32/Arc-Pics Vacation-2023 #creates label file inside of directory /media/joe/USB32/Arc-Pics
 -u /media/joe/USB32/Arc-Pics               #updates arcpics.json dir files inside of directories at /media/joe/USB32/Arc-Pics
 -b /media/joe/USB32/Arc-Pics               #updates database ~/.arcpics/Vacation-2023.DB
-
+```
 
