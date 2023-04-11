@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -12,78 +13,97 @@ import (
 
 var db *bolt.DB
 
-/*
-	func directoriesWalk(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		if info.IsDir() {
-			fmt.Printf("dir: %v\n", path)
-		} else {
-			if db == nil {
-				panic(fmt.Errorf("db is nil"))
-			}
-			if getDbValue(db, FILES_BUCKET, path) == "" {
-				fmt.Printf("     %-20s %10d %10s %10s\n", info.Name(), info.Size(), info.Mode(), info.ModTime())
-				value := info.Name() + "-" + info.ModTime().String()
-				err := putDbValue(db, FILES_BUCKET, path, value)
-				if err != nil {
-					panic(err)
-				}
-				fmt.Printf("     added value %s\n", value)
-			}
-		}
-		return nil
-	}
-*/
 var helpText = `=== arcpics: manage archived of pictures not only at external hard drives ===
 Usage arguments:
- [-h] help text
- [picturesDirName] [databaseDirName]
+ -h help text
+ -u picturesDirName       #update arcpics.json dir files
+ -b picturesDirName       #update database about 
+ -d databaseDirName       #database dir location other then default ~/.arcpics
+ -c databaseDirName label #create label inside of database directory
+ -a label                 #list all dirs on USB  with this label
+ -s label query           #list specific resources
+ -l                       #list all labels
+ -p port                  #web port definition
+ -w                       #start web - default port 8080
+
 Examples:
- -h
- ..no arguments - default relative directories: Arc-Pics  DB
- E:\Arc-Pics  C:\Users\Joe\DB
+-c %sArc-Pics Vacation-2023 #creates label file inside of directory %sArc-Pics
+-u %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
+-b %sArc-Pics               #updates database %sVacation-2023.DB
 `
 
 func help(msg string) {
 	if msg != "" {
 		fmt.Println(msg)
 	}
-	fmt.Println(helpText)
+	r := "/media/joe/USB32/"
+	h := "~/.arcpics/"
+	if runtime.GOOS == "windows" {
+		r = "E:\\"
+		h = "C:\\Users\\joe\\.arcpics\\"
+	}
+	fmt.Printf(helpText, r, r, r, r, r, h)
+}
+func update_dirs_or_db(i int, updateDirs bool, errMsg string) int {
+	var arcFS arcpics.ArcpicsFS
+	var err error
+	i = increaseAndCheckArgumentIndex(i, errMsg)
+	arcFS, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args[i])
+	exitIfErrorNotNil(err)
+	if updateDirs {
+		err = arcpics.ArcpicsFilesUpdate(arcFS.Dir)
+	} else {
+		err = arcpics.ArcpicsDatabaseUpdate(db, arcFS.Dir)
+	}
+	exitIfErrorNotNil(err)
+	db.Close()
+	return i
+}
+func exitIfErrorNotNil(err error) {
+	if err != nil {
+		help(err.Error())
+		os.Exit(1)
+	}
+}
+func increaseAndCheckArgumentIndex(i int, errMsg string) int {
+	i++
+	if i >= len(os.Args) {
+		help(errMsg)
+		os.Exit(1)
+	}
+	return i
 }
 func main() {
 	defer func(start time.Time) {
 		fmt.Printf("Elapsed time %s\n", time.Since(start))
 	}(time.Now())
-	if len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-h") {
-		help("")
-		os.Exit(0)
-	}
-	var picturesDirName string
-	var err error
-	picturesDirName, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args)
-	if err != nil {
-		help(err.Error())
+	var updateDirs = true
+	if len(os.Args) < 2 {
+		help("No argument")
 		os.Exit(1)
 	}
-	arcFS, err := arcpics.ArcpicsFS(picturesDirName)
-	if err != nil {
-		fmt.Println("error: " + err.Error())
-		os.Exit(1)
-	}
-	fmt.Println("arcFS.Dir=", arcFS.Dir)
-	arcpics.ArcpicsFilesUpdate(arcFS.Dir)
-	/*
-		err = filepath.Walk(picturesDirName, directoriesWalk)
-		if err != nil {
-			help(err.Error())
+	for i := 1; i < len(os.Args); i++ {
+		arg := os.Args[i]
+		if !strings.HasPrefix(arg, "-") {
+			help("Option '" + arg + "'does not start with char '-'")
 			os.Exit(1)
-		}
-	*/
 
-	defer db.Close()
+		}
+		switch arg {
+		case "-h":
+			help("")
+			os.Exit(0)
+		case "-u":
+			i = update_dirs_or_db(i, updateDirs, "No picturesDirName after -u")
+		case "-b":
+			i = update_dirs_or_db(i, !updateDirs, "No picturesDirName after -b")
+		case "-a":
+			i = increaseAndCheckArgumentIndex(i, "No label after -a")
+			db, err := arcpics.LabeledDatabase(os.Args[i])
+			exitIfErrorNotNil(err)
+			arcpics.ArcpicsAllKeys(db)
+		}
+	}
 
 	println("done...")
 }

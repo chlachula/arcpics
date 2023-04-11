@@ -41,7 +41,7 @@ func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
 	wantDbDir := getDatabaseDirName()
 	defer os.RemoveAll(wantDbDir)
-	args := make([]string, 1)
+	args := make([]string, 0)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
@@ -55,8 +55,8 @@ func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	//	wantDbDir := defaultDatabaseDirName
 	wantDbDir := getDatabaseDirName()
 	defer os.RemoveAll(wantDbDir)
-	args := make([]string, 2)
-	args[1] = wantPicDir
+	args := make([]string, 1)
+	args[0] = wantPicDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
@@ -68,9 +68,9 @@ func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 func TestPicturesAndDatabaseDirectories2(t *testing.T) {
 	wantPicDir := "ABCD"
 	wantDbDir := "XYZ"
-	args := make([]string, 3)
-	args[1] = wantPicDir
-	args[2] = wantDbDir
+	args := make([]string, 2)
+	args[0] = wantPicDir
+	args[1] = wantDbDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
 		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
@@ -87,17 +87,16 @@ func TestAssignPicturesDirectoryWithDatabase(t *testing.T) {
 	if err != nil {
 		t.Errorf("error creating temp dir: " + err.Error())
 	}
-	args := make([]string, 3)
-	args[0] = "program-name-will-be-removed-anyway"
-	args[1] = wantPicDir
-	args[2] = wantDbDir
+	args := make([]string, 2)
+	args[0] = wantPicDir
+	args[1] = wantDbDir
 	var gotDb *bolt.DB
-	var gotPicDir string
+	var gotArcFS ArcpicsFS
 	var gotErr error
 
-	gotPicDir, gotDb, gotErr = AssignPicturesDirectoryWithDatabase(args)
-	if wantPicDir != gotPicDir {
-		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotPicDir)
+	gotArcFS, gotDb, gotErr = AssignPicturesDirectoryWithDatabase(args[0], args[1])
+	if wantPicDir != gotArcFS.Dir {
+		t.Errorf("error - wantPicDir: %s; gotPicDir: %s", wantPicDir, gotArcFS.Dir)
 	}
 	if gotDb == nil {
 		t.Errorf("error - gotDb *bolt.DB is nil")
@@ -123,7 +122,7 @@ func TestAssignPicturesDirectoryWithDatabase(t *testing.T) {
 
 func TestFilesCount(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
-	fs, err := ArcpicsFS(picDir)
+	fs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -135,7 +134,7 @@ func TestFilesCount(t *testing.T) {
 }
 func TestDirFilesCount(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
-	fs, err := ArcpicsFS(picDir)
+	fs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -154,7 +153,7 @@ func TestDirCount(t *testing.T) {
 	// picDir := filepath.Join("D:\\pics", "Arc")
 	// picDir := filepath.Join("C:\\Users\\Josef", "Pictures")
 	// picDir := filepath.Join("E:", "Arc-Pics") // 2023-0402  gotDirCount: 3983 totalPathLenght:75914
-	fs, err := ArcpicsFS(picDir)
+	fs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -169,7 +168,7 @@ func TestDirCount(t *testing.T) {
 
 func TestDirPaths(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
-	afs, err := ArcpicsFS(picDir)
+	afs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -187,7 +186,7 @@ func TestDirPaths(t *testing.T) {
 
 func TestDirPathsUpdate(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
-	afs, err := ArcpicsFS(picDir)
+	afs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -207,7 +206,7 @@ func TestArcpicsFilesUpdate(t *testing.T) {
 
 	defer os.RemoveAll(arcDir)
 
-	fs, err := ArcpicsFS(arcDir)
+	fs, err := OpenArcpicsFS(arcDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -220,7 +219,7 @@ func TestArcpicsFilesUpdate(t *testing.T) {
 // go test -run TestPurgeJson__
 func TestPurgeJson__(t *testing.T) {
 	arcDir := filepath.Join("example", defaultPicturesDirName)
-	arcFS, err := ArcpicsFS(arcDir)
+	arcFS, err := OpenArcpicsFS(arcDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
@@ -241,4 +240,44 @@ func makeAndPopulateTempPicDir() (string, error) {
 		return wantPicDir, err
 	}
 	return wantPicDir, nil
+}
+
+func TestAbsRootPath(t *testing.T) {
+	want := "/tmp"
+	got := absRootPath("/tmp")
+	if want != got {
+		t.Errorf("error #1 - wantAbsDir: %s; gotAbsDir: %s", want, got)
+	}
+	got = absRootPath("/tmp/")
+	if want != got {
+		t.Errorf("error #2 - wantAbsDir: %s; gotAbsDir: %s", want, got)
+	}
+}
+func TestRelPath(t *testing.T) {
+	want := "./"
+	got := relPath("/tmp", "/tmp")
+	if want != got {
+		t.Errorf("error relPath #1a - want: %s; got: %s", want, got)
+	}
+	got = relPath("/tmp", "/tmp/")
+	if want != got {
+		t.Errorf("error relPath #1b - want: %s; got: %s", want, got)
+	}
+	want = "abc"
+	got = relPath("/tmp", "/tmp/abc")
+	if want != got {
+		t.Errorf("error relPath #2a - want: %s; got: %s", want, got)
+	}
+	got = relPath("/tmp", "/tmp/abc/")
+	if want != got {
+		t.Errorf("error relPath #2b - want: %s; got: %s", want, got)
+	}
+	got = relPath("/tmp", "/tmp/./abc")
+	if want != got {
+		t.Errorf("error relPath #2c - want: %s; got: %s", want, got)
+	}
+	got = relPath("/tmp", "/tmp/./abc/")
+	if want != got {
+		t.Errorf("error relPath #2d - want: %s; got: %s", want, got)
+	}
 }

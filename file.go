@@ -24,15 +24,15 @@ import (
 //
 // ATTENTION!!
 // ArcpicsFS work fine with fs.WalkDir unless there are any file operations
-// Then use filepath.WalkDir(arcpicsFS.Dir,...
+// Then use filepath.WalkDir(ArcpicsFS.Dir,...
 
-type arcpicsFS struct {
+type ArcpicsFS struct {
 	Dir   string
 	Label string
 }
 
-func ArcpicsFS(dir string) (arcpicsFS, error) {
-	var a arcpicsFS
+func OpenArcpicsFS(dir string) (ArcpicsFS, error) {
+	var a ArcpicsFS
 	a.Dir = dir
 	label, err := getLabel(dir)
 	if err != nil {
@@ -42,14 +42,14 @@ func ArcpicsFS(dir string) (arcpicsFS, error) {
 	return a, nil
 }
 
-func (afs arcpicsFS) Open(name string) (fs.File, error) {
+func (afs ArcpicsFS) Open(name string) (fs.File, error) {
 	f, err := os.Open(filepath.Join(afs.Dir, name))
 	if err != nil {
 		return f, err
 	}
 	return f, nil
 }
-func (afs arcpicsFS) DirPaths() ([]string, error) {
+func (afs ArcpicsFS) DirPaths() ([]string, error) {
 	paths := make([]string, 0)
 	fs.WalkDir(afs, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -65,7 +65,7 @@ func (afs arcpicsFS) DirPaths() ([]string, error) {
 	return paths, nil
 }
 
-func (afs arcpicsFS) DirPathsUpdate() error {
+func (afs ArcpicsFS) DirPathsUpdate() error {
 	paths, err := afs.DirPaths()
 	if err != nil {
 		return err
@@ -170,6 +170,8 @@ func jDirIsEqual(a, b JdirType) bool {
 	}
 	return true
 }
+
+// Updating directory tree json files according to dir content
 func ArcpicsFilesUpdate(dir string) error {
 	startTime := time.Now()
 	countDir := 0
@@ -427,4 +429,29 @@ func CopyDirFromTo(fromSrc, toDst string) error {
 		_, err = io.Copy(fh, in)
 		return err
 	})
+}
+
+func readEntireFileToBytes(fname string) ([]byte, error) {
+	var bytes []byte
+	reader, err := os.Open(fname)
+	if err != nil {
+		return bytes, err
+	}
+	bytes, err = io.ReadAll(reader)
+	if err != nil {
+		return bytes, err
+	}
+	return bytes, nil
+}
+func loadJdir(fname string) (JdirType, error) {
+	var jDir JdirType
+	var bytes []byte
+	var err error
+	if bytes, err = readEntireFileToBytes(fname); err != nil {
+		return jDir, err
+	}
+	if err = json.Unmarshal(bytes, &jDir); err != nil {
+		return jDir, err
+	}
+	return jDir, nil
 }

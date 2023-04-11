@@ -1,10 +1,7 @@
 package arcpics
 
 import (
-	//"encoding/json"
-
 	"fmt"
-	//"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,16 +14,16 @@ func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := defaultPicturesDirName
 	databaseDirName := getDatabaseDirName()
 
-	if len(args) < 2 {
+	if len(args) < 1 {
 		return picturesDirName, databaseDirName
 
 	}
-	if len(args) >= 2 {
-		picturesDirName = args[1]
+	if len(args) >= 1 {
+		picturesDirName = args[0]
 
 	}
-	if len(args) > 2 {
-		databaseDirName = args[2]
+	if len(args) > 1 {
+		databaseDirName = args[1]
 	}
 	return picturesDirName, databaseDirName
 }
@@ -138,11 +135,12 @@ func GetDbValue(db *bolt.DB, bucket []byte, key string) string {
 	return string(valueBytes)
 }
 
-func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error) {
-	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(args)
+func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB, error) {
+	var arcFS ArcpicsFS
+	picturesDirName, databaseDirName := picturesAndDatabaseDirectories(varArgs)
 	label, err := DbLabel(picturesDirName)
 	if err != nil {
-		return picturesDirName, nil, err
+		return arcFS, nil, err
 	}
 	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
 	dbDidExist := fileExists(databaseName)
@@ -158,7 +156,7 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 		// check INIT key
 		s := GetDbValue(db, SYSTEM_BUCKET, INIT_LABEL_KEY)
 		if s != label {
-			return picturesDirName, db, fmt.Errorf("init value  %s at DB %s doesn't match %s at dir %s", s, databaseName, label, picturesDirName)
+			return arcFS, db, fmt.Errorf("init value  %s at DB %s doesn't match %s at dir %s", s, databaseName, label, picturesDirName)
 		}
 	} else {
 		insertNewBucket(db, SYSTEM_BUCKET) // insert SYSTEM bucket just once
@@ -171,7 +169,44 @@ func AssignPicturesDirectoryWithDatabase(args []string) (string, *bolt.DB, error
 		insertNewBucket(db, FILES_BUCKET) // insert FILES bucket just once
 
 	}
-	return picturesDirName, db, nil
+	picturesDirName = strings.TrimSuffix(picturesDirName, "/")
+	arcFS, err = OpenArcpicsFS(picturesDirName)
+	if err != nil {
+		fmt.Println("error: " + err.Error())
+		os.Exit(1)
+	}
+
+	return arcFS, db, nil
+}
+
+func LabeledDatabase(label string, varArgs ...string) (*bolt.DB, error) {
+	databaseDirName := getDatabaseDirName()
+
+	if len(varArgs) >= 1 {
+		databaseDirName = varArgs[0]
+	}
+
+	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
+	dbExists := fileExists(databaseName)
+	if !dbExists {
+		return nil, fmt.Errorf("db file %s not found", databaseName)
+	}
+
+	// Open the database file. It will be created if it doesn't exist.
+	var db *bolt.DB
+	var err error
+	db, err = bolt.Open(databaseName, 0400, nil) //Read only
+	if err != nil {
+		return db, err
+	}
+
+	// check INIT key
+	s := GetDbValue(db, SYSTEM_BUCKET, INIT_LABEL_KEY)
+	if s != label {
+		return db, fmt.Errorf("init value  %s at DB %s doesn't match label %s", s, databaseName, label)
+	}
+
+	return db, nil
 }
 
 /*
