@@ -26,7 +26,7 @@ func find(root, ext string) []string {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("No directory argument")
+		fmt.Println("No directory with jpeg files with comments argument")
 		os.Exit(1)
 	}
 	dir := os.Args[1]
