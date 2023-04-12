@@ -1,6 +1,7 @@
 package arcpics
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -84,6 +85,53 @@ func ArcpicsAllKeys(db *bolt.DB) {
 			//fmt.Printf("key=%s, value=%s\n", k, v)
 			_ = v
 			fmt.Printf("ArcpicsAllKeys key=%s=\n", k)
+		}
+
+		return nil
+	})
+}
+func ArcpicsWordFrequency(db *bolt.DB) {
+	counter := map[string]int{}
+	db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(FILES_BUCKET)
+
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			//fmt.Printf("key=%s, value=%s\n", k, v)
+			var jDir JdirType
+			err := json.Unmarshal(v, &jDir)
+			if err == nil {
+				s := strings.Replace(jDir.MostComment, "|", " ", -1)
+				s = strings.Replace(s, ",", " ", -1)
+				s = strings.Replace(s, ";", " ", -1)
+				s = strings.Replace(s, ":", " ", -1)
+				s = strings.Replace(s, "-", " ", -1)
+				words := strings.Split(s, " ")
+				for _, word := range words {
+					counter[word]++
+				}
+			}
+		}
+
+		return nil
+	})
+	fmt.Printf("MostComment word frequency: %v\n", counter)
+}
+
+func ArcpicsQuery(db *bolt.DB, query string) {
+	db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket(FILES_BUCKET)
+
+		c := b.Cursor()
+		counter := 0
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			//fmt.Printf("key=%s, value=%s\n", k, v)
+			str := string(v)
+			if strings.Contains(str, query) {
+				counter++
+				fmt.Printf("ArcpicsQuery %2d. %s\n", counter, k)
+			}
 		}
 
 		return nil

@@ -40,13 +40,6 @@ func fileExists(filename string) bool {
 	_, err := os.OpenFile(filename, os.O_RDONLY, 0600)
 	return !os.IsNotExist(err)
 }
-func _fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
 func GetDatabaseDirName() string {
 	var userHomeDir string = "."
 	var err error

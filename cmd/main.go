@@ -23,6 +23,7 @@ Usage arguments:
  -d databaseDirName       #database dir location other then default ~/.arcpics
  -c databaseDirName label #create label inside of database directory
  -a label                 #list all dirs on USB  with this label
+ -f label                 #word frequency
  -s label query           #list specific resources
  -l                       #list all labels
  -p port                  #web port definition
@@ -110,6 +111,17 @@ func main() {
 			labels, err := arcpics.GetLabelsInDbDir(dbDir)
 			exitIfErrorNotNil(err)
 			fmt.Printf("Labels in %s %v\n", dbDir, labels)
+		case "-s":
+			i = increaseAndCheckArgumentIndex(i, "No label after -a")
+			db, err := arcpics.LabeledDatabase(os.Args[i])
+			exitIfErrorNotNil(err)
+			i = increaseAndCheckArgumentIndex(i, "No query after -a")
+			arcpics.ArcpicsQuery(db, os.Args[i])
+		case "-f":
+			i = increaseAndCheckArgumentIndex(i, "No label after -a")
+			db, err := arcpics.LabeledDatabase(os.Args[i])
+			exitIfErrorNotNil(err)
+			arcpics.ArcpicsWordFrequency(db)
 		default:
 			help("Unknown option '" + arg + "'")
 			os.Exit(1)

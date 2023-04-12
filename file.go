@@ -1,7 +1,6 @@
 package arcpics
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"github.com/chlachula/arcpics/jpeg"
-	"github.com/chlachula/goexif/exif"
 )
 
 // File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
@@ -255,15 +253,6 @@ func readJsonDirData(fname string) (JdirType, error) {
 	fileBytes, _ := os.ReadFile(fname)
 	err := json.Unmarshal(fileBytes, &userData)
 	return userData, err
-}
-func getJpegComment0(fname string) string {
-	file, err := os.Open(fname)
-	if err != nil {
-		fmt.Printf("getJpegComment error opening %s: %s", fname, err.Error())
-		return ""
-	}
-	r := io.Reader(bufio.NewReader(file))
-	return exif.ReadJpegComment(r)
 }
 func getJpegComment(fname string) string {
 	var j jpeg.JpegReader
