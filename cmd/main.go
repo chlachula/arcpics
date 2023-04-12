@@ -12,8 +12,10 @@ import (
 )
 
 var db *bolt.DB
+var version string = "0.0.2"
 
 var helpText = `=== arcpics: manage archived of pictures not only at external hard drives ===
+ver %s
 Usage arguments:
  -h help text
  -u picturesDirName       #update arcpics.json dir files
@@ -29,7 +31,7 @@ Usage arguments:
 Examples:
 -c %sArc-Pics Vacation-2023 #creates label file inside of directory %sArc-Pics
 -u %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
--b %sArc-Pics               #updates database %sVacation-2023.DB
+-b %sArc-Pics               #updates database %sVacation-2023.db
 `
 
 func help(msg string) {
@@ -42,7 +44,7 @@ func help(msg string) {
 		r = "E:\\"
 		h = "C:\\Users\\joe\\.arcpics\\"
 	}
-	fmt.Printf(helpText, r, r, r, r, r, h)
+	fmt.Printf(helpText, version, r, r, r, r, r, h)
 }
 func update_dirs_or_db(i int, updateDirs bool, errMsg string) int {
 	var arcFS arcpics.ArcpicsFS
@@ -102,6 +104,15 @@ func main() {
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
 			arcpics.ArcpicsAllKeys(db)
+		case "-l":
+			i++
+			dbDir := arcpics.GetDatabaseDirName()
+			labels, err := arcpics.GetLabelsInDbDir(dbDir)
+			exitIfErrorNotNil(err)
+			fmt.Printf("Labels in %s %v\n", dbDir, labels)
+		default:
+			help("Unknown option '" + arg + "'")
+			os.Exit(1)
 		}
 	}
 

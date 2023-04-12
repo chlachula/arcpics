@@ -54,7 +54,7 @@ func GetDatabaseDirName() string {
 	if err != nil {
 		fmt.Println("Error getting UserHomeDir: " + err.Error())
 	}
-	databaseDirName := filepath.Join(userHomeDir, dotArcpics)
+	databaseDirName := filepath.Join(userHomeDir, dotDefaultName)
 	if !dirExists(databaseDirName) {
 		err = os.Mkdir(databaseDirName, 0755)
 		if err != nil {
@@ -95,7 +95,7 @@ func insertNewBucket(db *bolt.DB, bucket []byte) {
 ////////////////////////
 
 func DbLabel(archiveDir string) (string, error) {
-	nameStart := defaultArcpicsDbLabel
+	nameStart := defaultNameDashLabelDot
 	label := ""
 	files, err := os.ReadDir(archiveDir)
 	if err != nil {

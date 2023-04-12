@@ -8,13 +8,17 @@ line:
  move Windows/Ubuntu — Alt + Up/Down arrow
 */
 
-var defaultArcpicsDbLabel = "arcpics-db-label."
+var defaultName = "arcpics"                              // arcpics
+var defaultNameDash = defaultName + "-"                  // arcpics-
+var defaultNameDashLabel = defaultNameDash + "label"     // arcpics-label
+var defaultNameDashLabelDot = defaultNameDashLabel + "." // arcpics-label.
+var dotDefaultName = "." + defaultName                   // .arcpics
 var defaultPicturesDirName = "Arc-Pics"
-var dotArcpics = ".arcpics"
 
 var SYSTEM_BUCKET = []byte("SYSTEM")
-var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 var FILES_BUCKET = []byte("FILES")
+
+var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 
 var jsonFilePrefix = "sample.json"
 var jsonUserData = "arcpics-user-data.json"

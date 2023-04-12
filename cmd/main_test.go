@@ -7,7 +7,7 @@ import (
 )
 
 func TestDbLabel0(t *testing.T) {
-	want := "there is no file arcpics-db-label.* at directory ../example/Arc-Pics-wrong-0 - should be e.g. arcpics-db-label.001"
+	want := "there is no file arcpics-label.* at directory ../example/Arc-Pics-wrong-0 - should be e.g. arcpics-label.001"
 	picturesDirName := "../example/Arc-Pics-wrong-0"
 	_, err := arcpics.DbLabel(picturesDirName)
 	got := err.Error()
@@ -16,7 +16,7 @@ func TestDbLabel0(t *testing.T) {
 	}
 }
 func TestDbLabel2(t *testing.T) {
-	want := "unexpected number files arcpics-db-label.* at directory ../example/Arc-Pics-wrong-2"
+	want := "unexpected number files arcpics-label.* at directory ../example/Arc-Pics-wrong-2"
 	picturesDirName := "../example/Arc-Pics-wrong-2"
 	_, err := arcpics.DbLabel(picturesDirName)
 	got := err.Error()

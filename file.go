@@ -77,7 +77,7 @@ func (afs ArcpicsFS) DirPathsUpdate() error {
 	return nil
 }
 func getLabel(archiveDir string) (string, error) {
-	nameStart := defaultArcpicsDbLabel
+	nameStart := defaultNameDashLabelDot
 	label := ""
 	files, err := os.ReadDir(archiveDir)
 	if err != nil {
@@ -350,9 +350,13 @@ func GetLabelsInDbDir(d string) ([]string, error) {
 	labels := make([]string, 0)
 	for _, file := range files {
 		if !file.IsDir() {
-			a := !strings.HasPrefix(file.Name(), defaultArcpicsDbLabel)
-			if a {
-				labels = append(labels, filepath.Ext(file.Name()))
+			a := strings.HasPrefix(file.Name(), defaultNameDash)
+			b := filepath.Ext(file.Name()) == ".db"
+			if a && b {
+				label := file.Name()
+				label = label[len(defaultNameDash):]
+				label = label[:len(label)-3]
+				labels = append(labels, label)
 			}
 		}
 	}
