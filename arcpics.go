@@ -12,7 +12,7 @@ import (
 
 func picturesAndDatabaseDirectories(args []string) (string, string) {
 	picturesDirName := defaultPicturesDirName
-	databaseDirName := getDatabaseDirName()
+	databaseDirName := GetDatabaseDirName()
 
 	if len(args) < 1 {
 		return picturesDirName, databaseDirName
@@ -47,7 +47,7 @@ func _fileExists(filename string) bool {
 	}
 	return !info.IsDir()
 }
-func getDatabaseDirName() string {
+func GetDatabaseDirName() string {
 	var userHomeDir string = "."
 	var err error
 	userHomeDir, err = os.UserHomeDir()
@@ -180,7 +180,7 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 }
 
 func LabeledDatabase(label string, varArgs ...string) (*bolt.DB, error) {
-	databaseDirName := getDatabaseDirName()
+	databaseDirName := GetDatabaseDirName()
 
 	if len(varArgs) >= 1 {
 		databaseDirName = varArgs[0]

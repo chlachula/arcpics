@@ -341,6 +341,23 @@ func filesInDir(d string) ([]fs.DirEntry, error) {
 	}
 	return onlyFiles, nil
 }
+func GetLabelsInDbDir(d string) ([]string, error) {
+	var files []fs.DirEntry
+	var err error
+	if files, err = os.ReadDir(d); err != nil {
+		return nil, err
+	}
+	labels := make([]string, 0)
+	for _, file := range files {
+		if !file.IsDir() {
+			a := !strings.HasPrefix(file.Name(), defaultArcpicsDbLabel)
+			if a {
+				labels = append(labels, filepath.Ext(file.Name()))
+			}
+		}
+	}
+	return labels, nil
+}
 
 func prettyprint(b []byte) ([]byte, error) {
 	var out bytes.Buffer

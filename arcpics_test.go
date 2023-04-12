@@ -39,7 +39,7 @@ func TestDbLabel1(t *testing.T) {
 
 func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
-	wantDbDir := getDatabaseDirName()
+	wantDbDir := GetDatabaseDirName()
 	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 0)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
@@ -53,7 +53,7 @@ func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	wantPicDir := "ABCD"
 	//	wantDbDir := defaultDatabaseDirName
-	wantDbDir := getDatabaseDirName()
+	wantDbDir := GetDatabaseDirName()
 	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 1)
 	args[0] = wantPicDir
