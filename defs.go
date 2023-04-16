@@ -20,8 +20,8 @@ var FILES_BUCKET = []byte("FILES")
 
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 
-var jsonFilePrefix = "sample.json"
-var jsonUserData = "arcpics-user-data.json"
+var jsonFilePrefix = defaultName + ".json"            // arcpics.json
+var jsonUserData = defaultNameDash + "user-data.json" // arcpics-user-data.json
 var timeStampJsonFormat = "2006-01-02_15:04:05.99"
 
 type JfileType = struct {
@@ -34,5 +34,6 @@ type JdirType = struct {
 	Description string      `json:",omitempty"`
 	MostComment string      `json:",omitempty"`
 	Location    string      `json:",omitempty"`
+	Skip        []string    `json:",omitempty"`
 	Files       []JfileType `json:",omitempty"`
 }

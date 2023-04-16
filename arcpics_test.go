@@ -40,7 +40,6 @@ func TestDbLabel1(t *testing.T) {
 func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 	wantPicDir := defaultPicturesDirName
 	wantDbDir := GetDatabaseDirName()
-	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 0)
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
 	if wantPicDir != gotPicDir {
@@ -52,9 +51,7 @@ func TestPicturesAndDatabaseDirectories0(t *testing.T) {
 }
 func TestPicturesAndDatabaseDirectories1(t *testing.T) {
 	wantPicDir := "ABCD"
-	//	wantDbDir := defaultDatabaseDirName
 	wantDbDir := GetDatabaseDirName()
-	defer os.RemoveAll(wantDbDir)
 	args := make([]string, 1)
 	args[0] = wantPicDir
 	gotPicDir, gotDbDir := picturesAndDatabaseDirectories(args)
@@ -126,7 +123,7 @@ func TestFilesCount(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	wantCount := 13 // find example/Arc-Pics | wc - 13, including directories
+	wantCount := 19 // find example/Arc-Pics | wc - 19, including directories
 	gotCount := FilesCount(fs)
 	if wantCount != gotCount {
 		t.Errorf("error - wantCount: %d; gotCount: %d", wantCount, gotCount)
@@ -138,8 +135,8 @@ func TestDirFilesCount(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	wantDirCount := 5   // find example/Arc-Pics -type d | wc .. 5 directories
-	wantFilesCount := 8 // find example/Arc-Pics -type f | wc .. 8 files
+	wantDirCount := 7    // find example/Arc-Pics -type d | wc .. 7 directories
+	wantFilesCount := 12 // find example/Arc-Pics -type f | wc .. 12 files
 	gotDirCount, gotFilesCount := DirFilesCount(fs)
 	if wantDirCount != gotDirCount {
 		t.Errorf("error - wantDirCount: %d; gotDirCount: %d", wantDirCount, gotDirCount)
@@ -157,7 +154,7 @@ func TestDirCount(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	wantDirCount := 5 // find example/Arc-Pics -type d | wc .. 5 directories
+	wantDirCount := 7 // find example/Arc-Pics -type d | wc .. 7 directories
 	gotDirCount, totalPathLength := DirCount(fs)
 	println("Root of Dirs: ", picDir)
 	println("Dirs count:", gotDirCount, "- total path lenght:", totalPathLength)
@@ -172,7 +169,7 @@ func TestDirPaths(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	wantLenPaths := 5 // find example/Arc-Pics -type d | wc .. 5 directories
+	wantLenPaths := 7 // find example/Arc-Pics -type d | wc .. 7 directories
 	gotPaths, err := afs.DirPaths()
 	if err != nil {
 		t.Errorf("error - DirPaths: %s", err.Error())

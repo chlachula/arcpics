@@ -100,6 +100,7 @@ func (j *JpegReader) Open(fname string, verbose bool) error {
 func (j *JpegReader) NextByte() byte {
 	b, err := j.br.ReadByte()
 	if err != nil {
+		fmt.Printf("error reading file %s\n", j.Filename)
 		panic(err)
 	}
 	//if j.charCounter > j.maxCounter {
@@ -269,3 +270,36 @@ func (j *JpegReader) Decode() error {
 	}
 	return nil
 }
+
+/* 2023-0412
+Arcpics - created:    4f   0s /media/josef/JosefsPassport1TB/Arc-Pics/Slides/arcpics.json
+Arcpics - created:    6f   0s /media/josef/JosefsPassport1TB/Arc-Pics/Sounds/arcpics.json
+Elapsed time 16m7.591727739s
+panic: EOF
+
+goroutine 1 [running]:
+github.com/chlachula/arcpics/jpeg.(*JpegReader).NextByte(0xc00008d3f0)
+	/home/josef/go/josef/arcpics/jpeg/jpeg.go:103 +0x4e
+github.com/chlachula/arcpics/jpeg.(*JpegReader).Decode(0xc00008d3f0)
+	/home/josef/go/josef/arcpics/jpeg/jpeg.go:209 +0x33
+github.com/chlachula/arcpics.getJpegComment({0xc0010db220?, 0x2?})
+	/home/josef/go/josef/arcpics/file.go:260 +0x54
+github.com/chlachula/arcpics.makeJdir({0xc0001b4c80, 0x38})
+	/home/josef/go/josef/arcpics/file.go:293 +0x679
+github.com/chlachula/arcpics.ArcpicsFilesUpdate.func1({0xc0001b4c80, 0x38}, {0x533dc0?, 0xc0000bb000?}, {0x0?, 0x0?})
+	/home/josef/go/josef/arcpics/file.go:190 +0x18a
+path/filepath.walkDir({0xc0001b4c80, 0x38}, {0x533dc0, 0xc0000bb000}, 0xc00008dda0)
+	/usr/local/go/src/path/filepath/path.go:445 +0x5c
+path/filepath.walkDir({0x7ffcb52cb3f7, 0x27}, {0x533df8, 0xc0000a8020}, 0xc00008dda0)
+	/usr/local/go/src/path/filepath/path.go:467 +0x2a7
+path/filepath.WalkDir({0x7ffcb52cb3f7, 0x27}, 0xc00004dda0)
+	/usr/local/go/src/path/filepath/path.go:535 +0xb0
+github.com/chlachula/arcpics.ArcpicsFilesUpdate({0x7ffcb52cb3f7, 0x27})
+	/home/josef/go/josef/arcpics/file.go:179 +0xf0
+main.update_dirs_or_db(0x0?, 0x1, {0x50d641?, 0xc00002a9b0?})
+	/home/josef/go/josef/arcpics/cmd/main.go:57 +0xc5
+main.main()
+	/home/josef/go/josef/arcpics/cmd/main.go:100 +0x510
+exit status 2
+
+*/

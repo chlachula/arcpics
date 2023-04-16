@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 
 var db *bolt.DB
 var version string = "0.0.2"
+var port = 8080
 
 var helpText = `=== arcpics: manage archived of pictures not only at external hard drives ===
 ver %s
@@ -100,6 +102,16 @@ func main() {
 			i = update_dirs_or_db(i, updateDirs, "No picturesDirName after -u")
 		case "-b":
 			i = update_dirs_or_db(i, !updateDirs, "No picturesDirName after -b")
+		case "-c":
+			i = increaseAndCheckArgumentIndex(i, "No picturesDirName after -c")
+			dirName := os.Args[i]
+			if !arcpics.DirExists(dirName) {
+				exitIfErrorNotNil(fmt.Errorf("directory %s not found", dirName))
+			}
+			i = increaseAndCheckArgumentIndex(i, "No label -c")
+			newLabel := os.Args[i]
+			err := arcpics.CreateLabelFile(dirName, newLabel)
+			exitIfErrorNotNil(err)
 		case "-a":
 			i = increaseAndCheckArgumentIndex(i, "No label after -a")
 			db, err := arcpics.LabeledDatabase(os.Args[i])
@@ -112,16 +124,29 @@ func main() {
 			exitIfErrorNotNil(err)
 			fmt.Printf("Labels in %s %v\n", dbDir, labels)
 		case "-s":
-			i = increaseAndCheckArgumentIndex(i, "No label after -a")
+			i = increaseAndCheckArgumentIndex(i, "No label after -s")
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
-			i = increaseAndCheckArgumentIndex(i, "No query after -a")
+			i = increaseAndCheckArgumentIndex(i, "No query after -s")
 			arcpics.ArcpicsQuery(db, os.Args[i])
 		case "-f":
-			i = increaseAndCheckArgumentIndex(i, "No label after -a")
+			i = increaseAndCheckArgumentIndex(i, "No label after -f")
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
 			arcpics.ArcpicsWordFrequency(db)
+		case "-p":
+			i = increaseAndCheckArgumentIndex(i, "No port after -p")
+			p, err := strconv.Atoi(os.Args[i])
+			exitIfErrorNotNil(err)
+			minPort := 0
+			maxPort := 65535
+			if p < minPort || p > maxPort {
+				err = fmt.Errorf("port %d out of expected interval %d..%d", p, minPort, maxPort)
+				exitIfErrorNotNil(err)
+			}
+			port = p
+		case "-w":
+			arcpics.Web(port)
 		default:
 			help("Unknown option '" + arg + "'")
 			os.Exit(1)

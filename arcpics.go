@@ -2,6 +2,7 @@ package arcpics
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -27,7 +28,7 @@ func picturesAndDatabaseDirectories(args []string) (string, string) {
 	}
 	return picturesDirName, databaseDirName
 }
-func dirExists(filename string) bool {
+func DirExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
@@ -36,7 +37,7 @@ func dirExists(filename string) bool {
 }
 
 // returns exists and isFile
-func fileExists(filename string) bool {
+func FileExists(filename string) bool {
 	_, err := os.OpenFile(filename, os.O_RDONLY, 0600)
 	return !os.IsNotExist(err)
 }
@@ -48,7 +49,9 @@ func GetDatabaseDirName() string {
 		fmt.Println("Error getting UserHomeDir: " + err.Error())
 	}
 	databaseDirName := filepath.Join(userHomeDir, dotDefaultName)
-	if !dirExists(databaseDirName) {
+	ok := DirExists(databaseDirName)
+	fmt.Printf("Dir %s exists: %t\n", databaseDirName, ok)
+	if !ok {
 		err = os.Mkdir(databaseDirName, 0755)
 		if err != nil {
 			fmt.Printf("Error creating directory %s :%s \n", databaseDirName, err.Error())
@@ -136,7 +139,7 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 		return arcFS, nil, err
 	}
 	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
-	dbDidExist := fileExists(databaseName)
+	dbDidExist := FileExists(databaseName)
 
 	// Open the database data file. It will be created if it doesn't exist.
 	var db *bolt.DB
@@ -180,7 +183,7 @@ func LabeledDatabase(label string, varArgs ...string) (*bolt.DB, error) {
 	}
 
 	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
-	dbExists := fileExists(databaseName)
+	dbExists := FileExists(databaseName)
 	if !dbExists {
 		return nil, fmt.Errorf("db file %s not found", databaseName)
 	}
@@ -200,6 +203,21 @@ func LabeledDatabase(label string, varArgs ...string) (*bolt.DB, error) {
 	}
 
 	return db, nil
+}
+func CreateLabelFile(dirName, newLabel string) error {
+	fname := filepath.Join(dirName, defaultNameDashLabelDot+newLabel)
+	if FileExists(fname) {
+		return fmt.Errorf("file %s already exists", fname)
+	}
+	f, err := os.Create(fname)
+	if err != nil {
+		return err
+	}
+	if _, err = io.WriteString(f, fmt.Sprintf("label is defined by an extension of this file: %s\n", newLabel)); err != nil {
+		return err
+	}
+	fmt.Printf("Label file %s was created\n", fname)
+	return nil
 }
 
 /*

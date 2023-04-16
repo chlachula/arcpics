@@ -191,7 +191,7 @@ func ArcpicsFilesUpdate(dir string) error {
 				return err
 			}
 
-			if !fileExists(fjson) {
+			if !FileExists(fjson) {
 				if err = CreateDirJson(fjson, jDir); err != nil {
 					return err
 				} else {
@@ -260,14 +260,24 @@ func getJpegComment(fname string) string {
 	j.Decode()
 	return j.Comment
 }
+func skipFile(skipFiles []string, fileName string) bool {
+	for _, skipFile := range skipFiles {
+		if skipFile == fileName {
+			return true
+		}
+	}
+	return false
+}
 func makeJdir(d string) (JdirType, error) {
 	var jd JdirType
+	var userData JdirType
+	var err error
 	jd.Files = make([]JfileType, 0)
 	jd.Description = "here could be a description from file " + jsonUserData
 	jd.Location = "here could be a description from file " + jsonUserData
 	userFile := filepath.Join(d, jsonUserData)
-	if fileExists(userFile) {
-		userData, err := readJsonDirData(userFile)
+	if FileExists(userFile) {
+		userData, err = readJsonDirData(userFile)
 		if err == nil {
 			jd.Description = userData.Description
 			jd.Location = userData.Location
@@ -277,7 +287,6 @@ func makeJdir(d string) (JdirType, error) {
 	}
 
 	var files []fs.DirEntry
-	var err error
 	if files, err = filesInDir(d); err != nil {
 		return jd, err
 	}
@@ -287,15 +296,17 @@ func makeJdir(d string) (JdirType, error) {
 		info, _ := f.Info()
 		var file JfileType
 		file.Name = info.Name()
-		file.Size = fmt.Sprintf("%d", info.Size())
-		file.Time = info.ModTime().Format(timeStampJsonFormat)
-		if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
-			file.Comment = getJpegComment(filepath.Join(d, file.Name))
-		} else {
-			file.Comment = "my own comment, OK? ReadJpegComment"
+		if !skipFile(userData.Skip, file.Name) {
+			file.Size = fmt.Sprintf("%d", info.Size())
+			file.Time = info.ModTime().Format(timeStampJsonFormat)
+			if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
+				file.Comment = getJpegComment(filepath.Join(d, file.Name))
+			} else {
+				file.Comment = "my own comment, OK? ReadJpegComment"
+			}
+			counter[file.Comment]++
+			jd.Files = append(jd.Files, file)
 		}
-		counter[file.Comment]++
-		jd.Files = append(jd.Files, file)
 	}
 
 	vMax := 0
