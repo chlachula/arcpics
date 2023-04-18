@@ -52,7 +52,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 		}
 		if d.IsDir() {
 			countDir++
-			fjson := filepath.Join(path, jsonFilePrefix)
+			fjson := filepath.Join(path, defaultNameJson)
 			var bytes []byte
 			var err error
 			if bytes, err = readEntireFileToBytes(fjson); err != nil {

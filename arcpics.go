@@ -50,7 +50,6 @@ func GetDatabaseDirName() string {
 	}
 	databaseDirName := filepath.Join(userHomeDir, dotDefaultName)
 	ok := DirExists(databaseDirName)
-	fmt.Printf("Dir %s exists: %t\n", databaseDirName, ok)
 	if !ok {
 		err = os.Mkdir(databaseDirName, 0755)
 		if err != nil {
@@ -271,7 +270,7 @@ func CreateDirJson(d string, dirFiles JdirType) error {
 	if err != nil {
 		return err
 	}
-	fname := filepath.Join(d, jsonFilePrefix+"-new")
+	fname := filepath.Join(d, defaultNameJson+"-new")
 	f, err := os.Create(fname)
 	if err != nil {
 		return err
@@ -284,18 +283,18 @@ func CreateDirJson(d string, dirFiles JdirType) error {
 	return nil
 }
 func UpdateDirJson(d string) error {
-	fjson_new := filepath.Join(d, jsonFilePrefix+"-new")
+	fjson_new := filepath.Join(d, defaultNameJson+"-new")
 	if _, err := os.Stat(fjson_new); err != nil {
 		return nil // there is no new file
 	}
-	fjson := filepath.Join(d, jsonFilePrefix)
+	fjson := filepath.Join(d, defaultNameJson)
 	var fjson_FileInfo os.FileInfo
 	var err error
 	if fjson_FileInfo, err = os.Stat(fjson); err != nil {
 		return nil // there is now current file
 	}
 	timeExtension := fjson_FileInfo.ModTime().Format("--2006-01-02_15-04-05") // Mon Jan 2 15:04:05 -0700 MST 2006
-	fjson_time := filepath.Join(d, jsonFilePrefix+timeExtension)
+	fjson_time := filepath.Join(d, defaultNameJson+timeExtension)
 	if err := os.Rename(fjson, fjson_time); err != nil {
 		return err
 	}

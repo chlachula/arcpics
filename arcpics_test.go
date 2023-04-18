@@ -147,17 +147,14 @@ func TestDirFilesCount(t *testing.T) {
 }
 func TestDirCount(t *testing.T) {
 	picDir := filepath.Join("example", defaultPicturesDirName)
-	// picDir := filepath.Join("D:\\pics", "Arc")
-	// picDir := filepath.Join("C:\\Users\\Josef", "Pictures")
-	// picDir := filepath.Join("E:", "Arc-Pics") // 2023-0402  gotDirCount: 3983 totalPathLenght:75914
 	fs, err := OpenArcpicsFS(picDir)
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
 	wantDirCount := 7 // find example/Arc-Pics -type d | wc .. 7 directories
 	gotDirCount, totalPathLength := DirCount(fs)
-	println("Root of Dirs: ", picDir)
-	println("Dirs count:", gotDirCount, "- total path lenght:", totalPathLength)
+	t.Log("Root of Dirs: ", picDir)
+	t.Log("Dirs count:", gotDirCount, "- total path lenght:", totalPathLength)
 	if wantDirCount != gotDirCount {
 		t.Errorf("error - wantDirCount: %d; gotDirCount: %d totalPathLenght:%d", wantDirCount, gotDirCount, totalPathLength)
 	}
@@ -175,7 +172,7 @@ func TestDirPaths(t *testing.T) {
 		t.Errorf("error - DirPaths: %s", err.Error())
 	}
 	gotLenPaths := len(gotPaths)
-	println("Root of Dirs: ", picDir)
+	t.Log("Root of Dirs: ", picDir)
 	if wantLenPaths != gotLenPaths {
 		t.Errorf("error - wantLenPaths: %d; gotLenPaths: %d", wantLenPaths, gotLenPaths)
 	}

@@ -56,7 +56,9 @@ func (afs ArcpicsFS) DirPaths() ([]string, error) {
 		}
 		if d.IsDir() {
 			paths = append(paths, path)
-			fmt.Printf("DirPaths-: %3db  %s\n", len(path), path)
+			if Verbose {
+				fmt.Printf("DirPaths-: %3db  %s\n", len(path), path)
+			}
 		}
 		return nil
 	})
@@ -70,7 +72,9 @@ func (afs ArcpicsFS) DirPathsUpdate() error {
 	}
 	for i, path := range paths {
 		dir := filepath.Join(afs.Dir, path)
-		fmt.Printf("%2d. path: %s\n", i, dir)
+		if Verbose {
+			fmt.Printf("%2d. path: %s\n", i, dir)
+		}
 	}
 	return nil
 }
@@ -112,11 +116,14 @@ func DirFilesCount(fsys fs.FS) (int, int) {
 	fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			countDir++
-			fmt.Printf("dir  #%3d - %s\n", countDir, path)
+			if Verbose {
+				fmt.Printf("dir  #%3d - %s\n", countDir, path)
+			}
 		} else {
 			countFiles++
-			fmt.Printf("    file #%3d - %s\n", countFiles, path)
-
+			if Verbose {
+				fmt.Printf("    file #%3d - %s\n", countFiles, path)
+			}
 		}
 		return nil
 	})
@@ -132,7 +139,9 @@ func DirCount(fsys fs.FS) (countDir int, totalPathLength int) {
 		if d.IsDir() {
 			countDir++
 			total += len(path)
-			fmt.Printf("DirCount:  #%3d %3d - %s\n", countDir, len(path), path)
+			if Verbose {
+				fmt.Printf("DirCount:  #%3d %3d - %s\n", countDir, len(path), path)
+			}
 		}
 		return nil
 	})
@@ -168,6 +177,16 @@ func jDirIsEqual(a, b JdirType) bool {
 	}
 	return true
 }
+func byUserData_thisDirShouldBeSkipped(dir string, name string) bool {
+	userData, err := readJsonDirData(filepath.Join(dir, defaultNameDashUserDataJson))
+	if err != nil {
+		return false //file not found or not readable
+	}
+	if skipFile(userData.Skip, name) {
+		return true
+	}
+	return false
+}
 
 // Updating directory tree json files according to dir content
 func ArcpicsFilesUpdate(dir string) error {
@@ -178,14 +197,19 @@ func ArcpicsFilesUpdate(dir string) error {
 	changedDirs := make([]string, 0)
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			println("fs.SkipDir", path)
+			println(err.Error(), "fs.SkipDir", path)
 			return fs.SkipDir
 		}
 		if d.IsDir() {
+			parentDir := filepath.Dir(path)
+			if byUserData_thisDirShouldBeSkipped(parentDir, d.Name()) {
+				return fs.SkipDir
+			}
+
 			countDir++
 			var jDir JdirType
 			jDirTimeStart := time.Now()
-			fjson := filepath.Join(path, jsonFilePrefix)
+			fjson := filepath.Join(path, defaultNameJson)
 
 			if jDir, err = makeJdir(path); err != nil {
 				return err
@@ -195,7 +219,9 @@ func ArcpicsFilesUpdate(dir string) error {
 				if err = CreateDirJson(fjson, jDir); err != nil {
 					return err
 				} else {
-					fmt.Printf("Arcpics - created: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), fjson)
+					if Verbose {
+						fmt.Printf("Arcpics - created: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), fjson)
+					}
 					changedDirs = append(changedDirs, path)
 					countCreate++
 				}
@@ -221,7 +247,9 @@ func ArcpicsFilesUpdate(dir string) error {
 		return nil
 	})
 	//fmt.Printf("new or updated dirs: %v\n", changedDirs)
-	fmt.Printf("ArcpicsFilesUpdate: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
+	if Verbose {
+		fmt.Printf("ArcpicsFilesUpdate: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
+	}
 	return nil
 }
 func PurgeJson__(dir string) error {
@@ -245,7 +273,9 @@ func PurgeJson__(dir string) error {
 		}
 		return nil
 	})
-	fmt.Printf("Dir root: %s\nPurge count: %d\n", dir, count)
+	if Verbose {
+		fmt.Printf("Dir root: %s\nPurge count: %d\n", dir, count)
+	}
 	return nil
 }
 func readJsonDirData(fname string) (JdirType, error) {
@@ -268,14 +298,28 @@ func skipFile(skipFiles []string, fileName string) bool {
 	}
 	return false
 }
-func makeJdir(d string) (JdirType, error) {
+
+/*
+func skipDirByUser(dir string, skipFiles []string) error {
+	f, _ := os.Open(dir)
+	name := f.Name()
+	fmt.Printf("TEST skipDirByUser dir=%s name=%s\n", dir, name)
+	if skipFile(skipFiles, name) {
+		return fs.SkipDir
+		//fmt.Errorf(ErrSkippedByUser)
+	}
+	return nil
+}
+*/
+
+func makeJdir(dir string) (JdirType, error) {
 	var jd JdirType
 	var userData JdirType
 	var err error
 	jd.Files = make([]JfileType, 0)
-	jd.Description = "here could be a description from file " + jsonUserData
-	jd.Location = "here could be a description from file " + jsonUserData
-	userFile := filepath.Join(d, jsonUserData)
+	jd.Description = "here could be a description from file " + defaultNameDashUserDataJson
+	jd.Location = "here could be a description from file " + defaultNameDashUserDataJson
+	userFile := filepath.Join(dir, defaultNameDashUserDataJson)
 	if FileExists(userFile) {
 		userData, err = readJsonDirData(userFile)
 		if err == nil {
@@ -287,7 +331,7 @@ func makeJdir(d string) (JdirType, error) {
 	}
 
 	var files []fs.DirEntry
-	if files, err = filesInDir(d); err != nil {
+	if files, err = filesInDir(dir); err != nil {
 		return jd, err
 	}
 	// find most occuring comment
@@ -300,7 +344,7 @@ func makeJdir(d string) (JdirType, error) {
 			file.Size = fmt.Sprintf("%d", info.Size())
 			file.Time = info.ModTime().Format(timeStampJsonFormat)
 			if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
-				file.Comment = getJpegComment(filepath.Join(d, file.Name))
+				file.Comment = getJpegComment(filepath.Join(dir, file.Name))
 			} else {
 				file.Comment = "my own comment, OK? ReadJpegComment"
 			}
@@ -332,8 +376,8 @@ func filesInDir(d string) ([]fs.DirEntry, error) {
 	onlyFiles := make([]fs.DirEntry, 0)
 	for _, file := range files {
 		if !file.IsDir() {
-			a := !strings.HasPrefix(file.Name(), jsonFilePrefix)
-			b := !strings.HasPrefix(file.Name(), jsonUserData)
+			a := !strings.HasPrefix(file.Name(), defaultNameJson)
+			b := !strings.HasPrefix(file.Name(), defaultNameDashUserDataJson)
 			if a && b {
 				onlyFiles = append(onlyFiles, file)
 			}
@@ -463,16 +507,4 @@ func readEntireFileToBytes(fname string) ([]byte, error) {
 		return bytes, err
 	}
 	return bytes, nil
-}
-func loadJdir(fname string) (JdirType, error) {
-	var jDir JdirType
-	var bytes []byte
-	var err error
-	if bytes, err = readEntireFileToBytes(fname); err != nil {
-		return jDir, err
-	}
-	if err = json.Unmarshal(bytes, &jDir); err != nil {
-		return jDir, err
-	}
-	return jDir, nil
 }

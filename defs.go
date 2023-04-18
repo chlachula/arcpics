@@ -20,9 +20,12 @@ var FILES_BUCKET = []byte("FILES")
 
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 
-var jsonFilePrefix = defaultName + ".json"            // arcpics.json
-var jsonUserData = defaultNameDash + "user-data.json" // arcpics-user-data.json
+var defaultNameJson = defaultName + ".json"                          // arcpics.json
+var defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
 var timeStampJsonFormat = "2006-01-02_15:04:05.99"
+
+var ErrSkippedByUser = "error - skipped by user"
+var Verbose bool = false
 
 type JfileType = struct {
 	Name    string

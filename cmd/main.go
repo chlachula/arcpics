@@ -28,6 +28,7 @@ Usage arguments:
  -f label                 #word frequency
  -s label query           #list specific resources
  -l                       #list all labels
+ -v                       #verbose output
  -p port                  #web port definition
  -w                       #start web - default port 8080
 
@@ -145,6 +146,9 @@ func main() {
 				exitIfErrorNotNil(err)
 			}
 			port = p
+		case "-v":
+			i++
+			arcpics.Verbose = true
 		case "-w":
 			arcpics.Web(port)
 		default:
