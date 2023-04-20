@@ -40,11 +40,12 @@ func getParams(regEx, url string) (paramsMap map[string]string) {
 }
 
 func route(w http.ResponseWriter, r *http.Request) {
-	println("path", r.URL.Path)
+	println("route path:", r.URL.Path)
 	switch {
 	case reHome.MatchString(r.URL.Path):
 		pageHome(w, r)
 	case reLabel.MatchString(r.URL.Path):
+		println("case reLabel:", r.URL.Path)
 		webLabel(w, r)
 	case reLabels.MatchString(r.URL.Path):
 		pageLabels(w, r)
@@ -138,6 +139,7 @@ value:
 		path = "./"
 	}
 	db, err := LabeledDatabase(label)
+	defer db.Close()
 	var val string
 	if err == nil {
 		val = GetDbValue(db, FILES_BUCKET, path)
@@ -145,7 +147,6 @@ value:
 		val = err.Error()
 	}
 	fmt.Fprintf(w, htmlPage, label, label, path, val)
-	println(label, " --------> ", "`"+path+"`", val)
 	var jd JdirType
 	err = json.Unmarshal([]byte(val), &jd)
 	if err == nil {
