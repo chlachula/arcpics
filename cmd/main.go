@@ -147,7 +147,6 @@ func main() {
 			}
 			port = p
 		case "-v":
-			i++
 			arcpics.Verbose = true
 		case "-w":
 			arcpics.Web(port)

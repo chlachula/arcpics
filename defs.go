@@ -39,4 +39,5 @@ type JdirType = struct {
 	Location    string      `json:",omitempty"`
 	Skip        []string    `json:",omitempty"`
 	Files       []JfileType `json:",omitempty"`
+	Dirs        []string    `json:",omitempty"`
 }

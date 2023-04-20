@@ -19,6 +19,7 @@ func absRootPath(dir string) string {
 	return strings.TrimSuffix(absDir, "/")
 }
 
+// Returns relative path to the root path
 func relPath(root, path string) string {
 	path, err := filepath.Abs(path)
 	if err != nil {
@@ -33,7 +34,6 @@ func relPath(root, path string) string {
 		return "./"
 	}
 	return strings.Replace(path, "\\", "/", -1)
-
 }
 
 // Updating database according to the directory tree json files
@@ -61,7 +61,11 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 
 			db.Update(func(tx *bolt.Tx) error {
 				b := tx.Bucket(FILES_BUCKET)
-				err := b.Put([]byte(relPath(dir, path)), bytes)
+				rp := relPath(rootDir, path)
+				if Verbose {
+					fmt.Printf("db.Add rel.path: %s\n", rp)
+				}
+				err := b.Put([]byte(rp), bytes)
 				if err != nil {
 					fmt.Printf("TEST, b.Put  error %s\n", err.Error())
 				}
@@ -137,3 +141,24 @@ func ArcpicsQuery(db *bolt.DB, query string) {
 		return nil
 	})
 }
+
+/* getValue
+func ArcpicsValue(db *bolt.DB, path string) string {
+	str := ""
+	db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket(FILES_BUCKET)
+
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			//fmt.Printf("key=%s, value=%s\n", k, v)
+			if strings.Contains(string(k), path) {
+				str = string(v)
+				break
+			}
+		}
+		return nil
+	})
+	return str
+}
+*/

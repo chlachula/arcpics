@@ -247,6 +247,7 @@ func TestAbsRootPath(t *testing.T) {
 		t.Errorf("error #2 - wantAbsDir: %s; gotAbsDir: %s", want, got)
 	}
 }
+
 func TestRelPath(t *testing.T) {
 	want := "./"
 	got := relPath("/tmp", "/tmp")
@@ -257,6 +258,7 @@ func TestRelPath(t *testing.T) {
 	if want != got {
 		t.Errorf("error relPath #1b - want: %s; got: %s", want, got)
 	}
+
 	want = "abc"
 	got = relPath("/tmp", "/tmp/abc")
 	if want != got {

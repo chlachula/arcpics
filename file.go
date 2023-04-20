@@ -353,6 +353,16 @@ func makeJdir(dir string) (JdirType, error) {
 		}
 	}
 
+	var subdirs []string
+	if subdirs, err = subdirsInDir(dir); err != nil {
+		return jd, err
+	}
+	for _, d := range subdirs {
+		if !skipFile(userData.Skip, d) {
+			jd.Dirs = append(jd.Dirs, d)
+		}
+	}
+
 	vMax := 0
 	kMax := ""
 	for k, v := range counter {
@@ -384,6 +394,20 @@ func filesInDir(d string) ([]fs.DirEntry, error) {
 		}
 	}
 	return onlyFiles, nil
+}
+func subdirsInDir(d string) ([]string, error) {
+	var files []fs.DirEntry
+	var err error
+	if files, err = os.ReadDir(d); err != nil {
+		return nil, err
+	}
+	dirs := make([]string, 0)
+	for _, file := range files {
+		if file.IsDir() {
+			dirs = append(dirs, file.Name())
+		}
+	}
+	return dirs, nil
 }
 func GetLabelsInDbDir(d string) ([]string, error) {
 	var files []fs.DirEntry
