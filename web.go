@@ -11,15 +11,11 @@ import (
 
 var mutex = &sync.Mutex{}
 
-/* deleteme
-https://stackoverflow.com/questions/30474313/how-to-use-regexp-get-url-pattern-in-golang
-https://stackoverflow.com/questions/30483652/how-to-get-capturing-group-functionality-in-go-regular-expressions
-*/
-
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
 var reLabels = regexp.MustCompile(`(?m)^\/labels[\/]{0,1}$`)
-var reLabel = regexp.MustCompile(`(?m)\/label\/([a-zA-z0-9]+)\/(.*)$`)
+var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
+var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
 
 /**
  * Parses url with the given regular expression and returns the
@@ -44,9 +40,12 @@ func route(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case reHome.MatchString(r.URL.Path):
 		pageHome(w, r)
-	case reLabel.MatchString(r.URL.Path):
-		println("case reLabel:", r.URL.Path)
-		webLabel(w, r)
+	case reLabelList.MatchString(r.URL.Path):
+		println("case reLabelList:", r.URL.Path)
+		pageLabelList(w, r)
+	case reLabelDir.MatchString(r.URL.Path):
+		println("case reLabelDir:", r.URL.Path)
+		pageLabelDir(w, r)
 	case reLabels.MatchString(r.URL.Path):
 		pageLabels(w, r)
 	case reAbout.MatchString(r.URL.Path):
@@ -56,46 +55,12 @@ func route(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func pageHome(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, webBegin("Arcpics home"))
-	fmt.Fprint(w, webMenu("/"))
-	fmt.Fprint(w, "<h1>Home</h1>")
-}
-func pageAbout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, webBegin("About arcpics"))
-	fmt.Fprint(w, webMenu("/about"))
-	fmt.Fprint(w, "<h1>About Arcpics</h1>")
-	fmt.Fprint(w, "Here is the description ...")
-}
-func pageLabels(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, webBegin("Arcpics Labels"))
-	fmt.Fprint(w, webMenu("/labels"))
-	mutex.Lock()
-	dbDir := GetDatabaseDirName()
-	labels, err := GetLabelsInDbDir(dbDir)
-	labelsString := ""
-	if err != nil {
-		labelsString = err.Error()
-	}
-	if len(labels) < 1 {
-		labelsString += " no labels"
-	} else {
-		labelsString += "\n"
-		for _, label := range labels {
-			labelsString += fmt.Sprintf(`<br/><a href="/label/%s/">%s</a>%s`, label, label, "\n")
-		}
-		labelsString += "\n"
-	}
-	htmlPage := `<h1>Arcpics Labels:</h1>%s<hr/><h5>Label dababases are located inside of %s`
-	fmt.Fprintf(w, htmlPage, labelsString, dbDir)
-	mutex.Unlock()
-}
-func webBegin(title string) string {
+func pageBeginning(title string) string {
 	htmlPage := `<html><head><title>%s</title>
 <style>
 </style>
 </head>
-<body style="text-align:center">
+<body style="text-align:left">
 `
 	return fmt.Sprintf(htmlPage, title)
 }
@@ -122,36 +87,95 @@ func webMenu(link string) string {
 	return s
 }
 
-func webLabel(w http.ResponseWriter, r *http.Request) {
-	htmlPage := `<html><title>Label %s</title>
-<body style="text-align:center"> <a href="/">home</a><hr/>
-<h1>Arcpics Label: %s</h1>
-path: %s <hr/>
-value: 
-<pre>
-%s
-</pre>
-`
-	params := getParams(`\/label\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
+func pageHome(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("Arcpics home"))
+	fmt.Fprint(w, webMenu("/"))
+	fmt.Fprint(w, "<h1>Home</h1>")
+}
+func pageAbout(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("About arcpics"))
+	fmt.Fprint(w, webMenu("/about"))
+	fmt.Fprint(w, "<h1>About Arcpics</h1>")
+	fmt.Fprint(w, "Here is the description ...")
+}
+func pageLabels(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("Arcpics Labels"))
+	fmt.Fprint(w, webMenu("/labels"))
+	mutex.Lock()
+	dbDir := GetDatabaseDirName()
+	labels, err := GetLabelsInDbDir(dbDir)
+	labelsString := ""
+	if err != nil {
+		labelsString = err.Error()
+	}
+	if len(labels) < 1 {
+		labelsString += " no labels"
+	} else {
+		labelsString += "\n"
+		for _, label := range labels {
+			labelsString += fmt.Sprintf(`<br/>%s `, label)
+			labelsString += fmt.Sprintf(`<a href="/label-list/%s">list</a> %s `, label, "\n")
+			labelsString += fmt.Sprintf(`<a href="/label-dir/%s/">dir</a>%s`, label, "\n")
+		}
+		labelsString += "\n"
+	}
+	htmlPage := `<h1>Arcpics Labels:</h1>%s<hr/><h5>Label dababases are located inside of %s`
+	fmt.Fprintf(w, htmlPage, labelsString, dbDir)
+	mutex.Unlock()
+}
+
+func pageLabelList(w http.ResponseWriter, r *http.Request) {
+	params := getParams(`\/label-list\/(?P<Label>[a-zA-z0-9]+)$`, r.URL.Path)
+	label := params["Label"]
+	var keys []string
+	db, err := LabeledDatabase(label)
+	if err == nil {
+		keys = ArcpicsAllKeys(db)
+	}
+	defer db.Close()
+	fmt.Fprint(w, pageBeginning("Arcpics Label "+label+" list"))
+	fmt.Fprint(w, webMenu(""))
+	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
+	fmt.Fprintf(w, lblfmt, label)
+	for _, k := range keys {
+		fmt.Fprintf(w, "<br/>%s\n", k)
+	}
+}
+
+func pageLabelDir(w http.ResponseWriter, r *http.Request) {
+	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
 	path := params["Path"]
 	if path == "" {
 		path = "./"
 	}
 	db, err := LabeledDatabase(label)
-	defer db.Close()
 	var val string
 	if err == nil {
 		val = GetDbValue(db, FILES_BUCKET, path)
 	} else {
 		val = err.Error()
 	}
-	fmt.Fprintf(w, htmlPage, label, label, path, val)
+	defer db.Close()
+	fmt.Fprint(w, pageBeginning("Arcpics Label "+label))
+	fmt.Fprint(w, webMenu(""))
+	lblfmt := "<h1>Arcpics Label: %s</h1>\npath: %s <hr/>\nvalue: \n<pre>\n%s\n</pre>"
+	fmt.Fprintf(w, lblfmt, label, path, val)
+
+	head := "<pre>%33s %55s %45s %s\n"
+	fmt.Fprintf(w, head, `<a href="?C=N;O=D">Name</a>`, `<a href="?C=M;O=A">Last modified</a>`, `<a href="?C=S;O=A">Size</a>`, `<a href="?C=D;O=A">Description</a>`)
 	var jd JdirType
 	err = json.Unmarshal([]byte(val), &jd)
 	if err == nil {
+		for _, f := range jd.Files {
+			fmt.Fprintf(w, "      %-24s%-26s%10s\n", f.Name, f.Time, f.Size)
+		}
+		parentDir, _ := getParentDir(path)
+		if path != "./" {
+			fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, parentDir, "parent directory")
+		}
 		for _, d := range jd.Dirs {
-			fmt.Fprintf(w, "<br/><a href=\"/label/%s/%s\">%s</a>\n", label, d, d)
+			fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, path+"/"+d, d)
 		}
 	}
 }

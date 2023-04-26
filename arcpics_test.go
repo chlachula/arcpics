@@ -277,3 +277,32 @@ func TestRelPath(t *testing.T) {
 		t.Errorf("error relPath #2d - want: %s; got: %s", want, got)
 	}
 }
+
+func TestGetParentDir(t *testing.T) {
+	// directories have relative path
+	fn := "getParentDir"
+	want := "./"
+	got, err := getParentDir("tmp")
+	if err != nil {
+		t.Errorf("1a unexpected error %s", err.Error())
+	}
+	if want != got {
+		t.Errorf("1a error %s - want: %s; got: %s", fn, want, got)
+	}
+	want = "tmp"
+	got, err = getParentDir("tmp/abc")
+	if err != nil {
+		t.Errorf("1b unexpected error %s", err.Error())
+	}
+	if want != got {
+		t.Errorf("1b error %s - want: %s; got: %s", fn, want, got)
+	}
+	want = "tmp/abc"
+	got, err = getParentDir("tmp/abc/x2")
+	if err != nil {
+		t.Errorf("1c unexpected error %s", err.Error())
+	}
+	if want != got {
+		t.Errorf("1c error %s - want: %s; got: %s", fn, want, got)
+	}
+}

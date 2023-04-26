@@ -36,13 +36,26 @@ func relPath(root, path string) string {
 	return strings.Replace(path, "\\", "/", -1)
 }
 
+func getParentDir(relPath string) (string, error) {
+	if strings.HasPrefix(relPath, "/") {
+		return "", fmt.Errorf("not relative path: '%s'", relPath)
+	}
+	i := strings.LastIndex(relPath, "/")
+	if i <= 0 {
+		return "./", nil // path abc
+	}
+	return relPath[:i], nil // path abc/def
+}
+
 // Updating database according to the directory tree json files
 func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 	rootDir, err := filepath.Abs(dir)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("ArcpicsDatabaseUpdate rootDir='%s'\n", rootDir)
+	if Verbose {
+		fmt.Printf("ArcpicsDatabaseUpdate rootDir='%s'\n", rootDir)
+	}
 	startTime := time.Now()
 	countDir := 0
 	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
@@ -56,9 +69,9 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 			var bytes []byte
 			var err error
 			if bytes, err = readEntireFileToBytes(fjson); err != nil {
+				fmt.Printf("Error reading file %s - %s \n", fjson, err.Error())
 				return err
 			}
-
 			db.Update(func(tx *bolt.Tx) error {
 				b := tx.Bucket(FILES_BUCKET)
 				rp := relPath(rootDir, path)
@@ -67,18 +80,24 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 				}
 				err := b.Put([]byte(rp), bytes)
 				if err != nil {
-					fmt.Printf("TEST, b.Put  error %s\n", err.Error())
+					fmt.Printf(string(FILES_BUCKET)+" b.Put  error %s\n", err.Error())
 				}
 				return err
 			})
 		}
 		return nil
 	})
-	fmt.Printf("ArcpicsDatabaseUpdate: elapsed time: %s\n", time.Since(startTime))
+	if countDir < 1 {
+		fmt.Printf("ArcpicsDatabaseUpdate Warning: no %s files found at %s", defaultNameJson, dir)
+	}
+	if Verbose {
+		fmt.Printf("ArcpicsDatabaseUpdate: %d files %s found, elapsed time: %s\n", countDir, defaultNameJson, time.Since(startTime))
+	}
 	return nil
 }
 
-func ArcpicsAllKeys(db *bolt.DB) {
+func ArcpicsAllKeys(db *bolt.DB) []string {
+	keys := make([]string, 0)
 	db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
 		b := tx.Bucket(FILES_BUCKET)
@@ -88,11 +107,12 @@ func ArcpicsAllKeys(db *bolt.DB) {
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			//fmt.Printf("key=%s, value=%s\n", k, v)
 			_ = v
-			fmt.Printf("ArcpicsAllKeys key=%s=\n", k)
+			keys = append(keys, string(k))
 		}
 
 		return nil
 	})
+	return keys
 }
 func ArcpicsWordFrequency(db *bolt.DB) {
 	counter := map[string]int{}

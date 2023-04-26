@@ -117,7 +117,10 @@ func main() {
 			i = increaseAndCheckArgumentIndex(i, "No label after -a")
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
-			arcpics.ArcpicsAllKeys(db)
+			keys := arcpics.ArcpicsAllKeys(db)
+			for _, k := range keys {
+				fmt.Println(k)
+			}
 		case "-l":
 			i++
 			dbDir := arcpics.GetDatabaseDirName()
