@@ -80,6 +80,7 @@ type JpegReader struct {
 	ImageHeight int
 	ImageWidth  int
 	Comment     string
+	Thumbnail   []byte
 	verbose     bool
 	maxCounter  int // just to develop and debug
 	charCounter int
@@ -170,6 +171,30 @@ func (j *JpegReader) PrintMarkComment(markName string, m byte) {
 		fmt.Printf(" %04x -2=%d %s", length, len(data), j.Comment)
 	}
 }
+func (j *JpegReader) PrintMarkExif(markName string, m byte) {
+	length, data := j.PrintMarkAndGetData(markName, m)
+	start := 0
+	end := 0
+	for i := 0; i < len(data); i++ {
+		if data[i] == 0xFF && (i+1) < len(data) {
+			if data[i+1] == 0xD8 {
+				start = i
+			}
+			if data[i+1] == 0xD9 {
+				end = i
+			}
+		}
+	}
+
+	size := end - start
+	if j.verbose {
+		fmt.Printf(" %04x -2=%d Thumbnail start=%d end=%d size=%d", length, len(data), start, end, size)
+	}
+	if size > 0 {
+		j.Thumbnail = data[start:end]
+	}
+
+}
 func (j *JpegReader) PrintMarkStartOfFrame0(markName string, m byte) {
 	length, data := j.PrintMarkAndGetData(markName, m)
 	j.ImageHeight = int(binary.BigEndian.Uint16(data[1:3]))
@@ -236,7 +261,7 @@ func (j *JpegReader) Decode() error {
 		case ff_APP0: // application #0
 			j.PrintMark("AP0", m)
 		case ff_APP1: // EXIF, next two byte are SIZE
-			j.PrintMarkLength("AP1", m)
+			j.PrintMarkExif("AP1", m)
 		case ff_APP2: // application #2
 			j.PrintMark("AP2", m)
 		case ff_APP4: // application #4
