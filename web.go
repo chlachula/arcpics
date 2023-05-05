@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -185,7 +186,30 @@ func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<h1>%d - File not found: %s</h1>", http.StatusNotFound, jpgFile)
 	}
 }
-
+func fixNameLink(w http.ResponseWriter, label, path, name string, dir bool) {
+	var linkName string
+	fixName := name
+	if len(name) >= 24 {
+		fixName = name[:21] + "..&gt;"
+	}
+	if dir {
+		fixName += "/"
+	}
+	if dir {
+		linkName = fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, path, name, fixName)
+	} else if strings.HasSuffix(strings.ToLower(name), ".jpg") || dir {
+		linkName = fmt.Sprintf(`<a href="/label-dir/%s/%s/%s" title="%s">%s</a>`, label, path, name, name, fixName)
+	} else {
+		linkName = fmt.Sprintf(`<span title="%s">%s</span>`, name, fixName)
+	}
+	for count := len(name); count < 24; count++ {
+		linkName = linkName + " "
+	}
+	fmt.Fprintf(w, "      %-24s", linkName)
+	if dir {
+		fmt.Fprint(w, "\n")
+	}
+}
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
@@ -193,6 +217,10 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		path = "./"
 	}
+	myUrl, _ := url.Parse(r.RequestURI)
+	urlParams, _ := url.ParseQuery(myUrl.RawQuery)
+	println("JOSEF r.RequestURI", r.RequestURI, urlParams)
+	println("C=", urlParams.Get("C"))
 	db, err := LabeledDatabase(label)
 	var val string
 	if err == nil {
@@ -203,32 +231,43 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 	fmt.Fprint(w, pageBeginning("Arcpics Label "+label))
 	fmt.Fprint(w, webMenu(""))
-	lblfmt := "<h1>Arcpics Label: %s</h1>\npath: %s <hr/>\nvalue: \n<pre>\n%s\n</pre>"
-	fmt.Fprintf(w, lblfmt, label, path, val)
+	var jd JdirType
+	if err = json.Unmarshal([]byte(val), &jd); err != nil {
+		lblfmt := "<h2>Arcpics Label: %s</h2>\npath: %s <hr/>\nerror: %s\n"
+		fmt.Fprintf(w, lblfmt, label, path, err.Error())
+		return
+	}
+
+	lblfmt := "<h1>Arcpics Label: %s</h1>\npath: %s %s<hr/>\n"
+	comments := ""
+	if jd.MostComment != "" {
+		comments = "most comments: " + jd.MostComment
+	}
+	fmt.Fprintf(w, lblfmt, label, path, comments)
 
 	head := "<pre>%33s %55s %45s %s\n"
 	fmt.Fprintf(w, head, `<a href="?C=N;O=D">Name</a>`, `<a href="?C=M;O=A">Last modified</a>`, `<a href="?C=S;O=A">Size</a>`, `<a href="?C=D;O=A">Description</a>`)
-	var jd JdirType
-	err = json.Unmarshal([]byte(val), &jd)
-	if err == nil {
-		for _, f := range jd.Files {
-			name := f.Name
-			if strings.HasSuffix(name, ".jpg") {
-				name = fmt.Sprintf(`<a href="/label-dir/%s/%s/%s">%s</a>`, label, path, name, name)
-			}
-			for count := len(f.Name); count < 24; count++ {
-				name = name + " "
-			}
-			fmt.Fprintf(w, "      %-24s%-26s%10s %s\n", name, f.Time, f.Size, f.Comment)
-		}
-		parentDir, _ := getParentDir(path)
-		if path != "./" {
-			fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, parentDir, "parent directory")
-		}
-		for _, d := range jd.Dirs {
-			fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, path+"/"+d, d)
+	parentDir, _ := getParentDir(path)
+	if path != "./" {
+		fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, parentDir, "parent directory")
+	}
+	for _, f := range jd.Files {
+		fixNameLink(w, label, path, f.Name, false)
+		fmt.Fprintf(w, "%-26s%10s %s\n", f.Time, f.Size, f.Comment)
+	}
+	for _, d := range jd.Dirs {
+		fixNameLink(w, label, path+"/"+d, d, true)
+	}
+
+	//Thumbnail images
+	fmt.Fprint(w, "\n<hr/>\n")
+	for _, f := range jd.Files {
+		if strings.HasSuffix(strings.ToLower(f.Name), ".jpg") {
+			title := f.Name + ": " + f.Comment
+			fmt.Fprintf(w, `<img src="/label-dir/%s/%s/%s" title="%s"/> `, label, path, f.Name, title)
 		}
 	}
+
 }
 
 func Web(port int) {
