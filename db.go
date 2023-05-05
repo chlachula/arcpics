@@ -47,6 +47,79 @@ func getParentDir(relPath string) (string, error) {
 	return relPath[:i], nil // path abc/def
 }
 
+// Writting the directory tree json files to database
+func ArcpicsFiles2DB(db *bolt.DB, dir string) error {
+	rootDir, err := filepath.Abs(dir)
+	if err != nil {
+		return err
+	}
+	if Verbose {
+		fmt.Printf("ArcpicsFiles2DB rootDir='%s'\n", rootDir)
+	}
+	startTime := time.Now()
+	countDir := 0
+	countCreate := 0
+	countUpdate := 0
+	changedDirs := make([]string, 0)
+	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			println(err.Error(), "fs.SkipDir", path)
+			return fs.SkipDir
+		}
+		if d.IsDir() {
+			parentDir := filepath.Dir(path)
+			if byUserData_thisDirShouldBeSkipped(parentDir, d.Name()) {
+				return fs.SkipDir
+			}
+
+			countDir++
+			var jDir JdirType
+			jDirTimeStart := time.Now()
+
+			if jDir, err = makeJdir(path); err != nil {
+				return err
+			}
+
+			//			if err != nil {
+			//				return err
+			//			}
+			if Verbose {
+				fmt.Printf("\rArcpicsFiles2DB: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), path)
+			}
+			changedDirs = append(changedDirs, path)
+			countCreate++
+			bytes, err := json.Marshal(jDir)
+			if err != nil {
+				return err
+			}
+			if bytes, err = prettyprint(bytes); err != nil {
+				return err
+			}
+
+			db.Update(func(tx *bolt.Tx) error {
+				b := tx.Bucket(FILES_BUCKET)
+				rp := relPath(rootDir, path)
+				if Verbose {
+					fmt.Printf("db.Add rel.path: %s\n", rp)
+				}
+				err := b.Put([]byte(rp), bytes)
+				if err != nil {
+					fmt.Printf(string(FILES_BUCKET)+" b.Put  error %s\n", err.Error())
+				}
+				return err
+			})
+
+		}
+		return nil
+	})
+	//fmt.Printf("new or updated dirs: %v\n", changedDirs)
+	if Verbose {
+		fmt.Printf("ArcpicsFiles2DB: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
+	}
+	return nil
+
+}
+
 // Updating database according to the directory tree json files
 func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 	rootDir, err := filepath.Abs(dir)

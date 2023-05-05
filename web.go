@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 	"sync"
 )
 
@@ -16,6 +17,8 @@ var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
 var reLabels = regexp.MustCompile(`(?m)^\/labels[\/]{0,1}$`)
 var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
 var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
+var reLabelFileJpegStr = `(?m)\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)\/(?P<JpgFile>.*\.jpg)$`
+var reLabelFileJpeg = regexp.MustCompile(reLabelFileJpegStr)
 
 /**
  * Parses url with the given regular expression and returns the
@@ -43,6 +46,9 @@ func route(w http.ResponseWriter, r *http.Request) {
 	case reLabelList.MatchString(r.URL.Path):
 		println("case reLabelList:", r.URL.Path)
 		pageLabelList(w, r)
+	case reLabelFileJpeg.MatchString(r.URL.Path):
+		println("case reLabelFileJpeg:", r.URL.Path)
+		pageLabelFileJpeg(w, r)
 	case reLabelDir.MatchString(r.URL.Path):
 		println("case reLabelDir:", r.URL.Path)
 		pageLabelDir(w, r)
@@ -142,6 +148,44 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
+	params := getParams(reLabelFileJpegStr, r.URL.Path)
+	label := params["Label"]
+	path := params["Path"]
+	jpgFile := params["JpgFile"]
+	if path == "" {
+		path = "./"
+	}
+	db, err := LabeledDatabase(label)
+	var val string
+	if err == nil {
+		val = GetDbValue(db, FILES_BUCKET, path)
+	} else {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "<h1>Internal server error: %s</h1>", err.Error())
+		return
+	}
+	defer db.Close()
+	var jd JdirType
+	err = json.Unmarshal([]byte(val), &jd)
+	ok := false
+	if err == nil {
+		for _, f := range jd.Files {
+			if jpgFile == f.Name {
+				w.WriteHeader(http.StatusOK)
+				w.Header().Set("Content-Type", "application/octet-stream")
+				w.Write(f.Thumbnail)
+				ok = true
+				break
+			}
+		}
+	}
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "<h1>%d - File not found: %s</h1>", http.StatusNotFound, jpgFile)
+	}
+}
+
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
@@ -168,7 +212,14 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal([]byte(val), &jd)
 	if err == nil {
 		for _, f := range jd.Files {
-			fmt.Fprintf(w, "      %-24s%-26s%10s\n", f.Name, f.Time, f.Size)
+			name := f.Name
+			if strings.HasSuffix(name, ".jpg") {
+				name = fmt.Sprintf(`<a href="/label-dir/%s/%s/%s">%s</a>`, label, path, name, name)
+			}
+			for count := len(f.Name); count < 24; count++ {
+				name = name + " "
+			}
+			fmt.Fprintf(w, "      %-24s%-26s%10s %s\n", name, f.Time, f.Size, f.Comment)
 		}
 		parentDir, _ := getParentDir(path)
 		if path != "./" {

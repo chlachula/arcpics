@@ -290,6 +290,13 @@ func getJpegComment(fname string) string {
 	j.Decode()
 	return j.Comment
 }
+func updateByJpegValues(file *JfileType, fname string) {
+	var j jpeg.JpegReader
+	j.Open(fname, false) // verbose=false
+	j.Decode()
+	file.Comment = j.Comment
+	file.Thumbnail = j.Thumbnail
+}
 func skipFile(skipFiles []string, fileName string) bool {
 	for _, skipFile := range skipFiles {
 		if skipFile == fileName {
@@ -344,9 +351,10 @@ func makeJdir(dir string) (JdirType, error) {
 			file.Size = fmt.Sprintf("%d", info.Size())
 			file.Time = info.ModTime().Format(timeStampJsonFormat)
 			if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
-				file.Comment = getJpegComment(filepath.Join(dir, file.Name))
-			} else {
-				file.Comment = "my own comment, OK? ReadJpegComment"
+				updateByJpegValues(&file, filepath.Join(dir, file.Name))
+				//				file.Comment = getJpegComment(filepath.Join(dir, file.Name))
+				//			} else {
+				//				file.Comment = "my own comment, OK? ReadJpegComment"
 			}
 			counter[file.Comment]++
 			jd.Files = append(jd.Files, file)
