@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strings"
 	"sync"
@@ -63,11 +62,23 @@ func route(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageBeginning(title string) string {
-	htmlPage := `<html><head><title>%s</title>
+	htmlPage := `<html><head>  <title>%s</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <link rel="icon" type="image/ico" href="favicon.ico">	
 <style>
 </style>
+<script>
+ function toggleHideDisplay(myDIV) {
+   var x = document.getElementById(myDIV);
+   if (x.style.display === "none") {
+     x.style.display = "block";
+   } else {
+     x.style.display = "none";
+   }
+ }
+</script>
 </head>
-<body style="text-align:left">
+<body style="text-align:left"><a name="top"></a>
 `
 	return fmt.Sprintf(htmlPage, title)
 }
@@ -145,7 +156,8 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
 	fmt.Fprintf(w, lblfmt, label)
 	for _, k := range keys {
-		fmt.Fprintf(w, "<br/>%s\n", k)
+		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
+		fmt.Fprintf(w, "<br/> %s\n", link)
 	}
 }
 
@@ -197,7 +209,7 @@ func fixNameLink(w http.ResponseWriter, label, path, name string, dir bool) {
 	}
 	if dir {
 		linkName = fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, path, name, fixName)
-	} else if strings.HasSuffix(strings.ToLower(name), ".jpg") || dir {
+	} else if isJpegFile(name) || dir {
 		linkName = fmt.Sprintf(`<a href="/label-dir/%s/%s/%s" title="%s">%s</a>`, label, path, name, name, fixName)
 	} else {
 		linkName = fmt.Sprintf(`<span title="%s">%s</span>`, name, fixName)
@@ -210,6 +222,37 @@ func fixNameLink(w http.ResponseWriter, label, path, name string, dir bool) {
 		fmt.Fprint(w, "\n")
 	}
 }
+func prevNextPathLinks(val string, dirName string) (string, string) {
+	fmtStr := "<a href=\"%s\">%s</a>"
+	prevLink := "|"
+	nextLink := "|"
+	if dirName == "./" {
+		return " ", " "
+	}
+	var jd JdirType
+	if err := json.Unmarshal([]byte(val), &jd); err != nil {
+		return "-", "-"
+	}
+	for i, d := range jd.Dirs {
+		if d == dirName {
+			if i-1 >= 0 {
+				prevLink = fmt.Sprintf(fmtStr, jd.Dirs[i-1], "&lt;-")
+			}
+			if i+1 < len(jd.Dirs) {
+				nextLink = fmt.Sprintf(fmtStr, jd.Dirs[i+1], "-&gt;")
+			}
+			break
+		}
+	}
+	return prevLink, nextLink
+}
+func lastDir(path string) string {
+	s := strings.Split(path, "/")
+	if len(s) < 2 {
+		return path
+	}
+	return s[len(s)-1]
+}
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
@@ -217,14 +260,15 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		path = "./"
 	}
-	myUrl, _ := url.Parse(r.RequestURI)
-	urlParams, _ := url.ParseQuery(myUrl.RawQuery)
-	println("JOSEF r.RequestURI", r.RequestURI, urlParams)
-	println("C=", urlParams.Get("C"))
+	//	myUrl, _ := url.Parse(r.RequestURI)
+	//	urlParams, _ := url.ParseQuery(myUrl.RawQuery)
 	db, err := LabeledDatabase(label)
 	var val string
+	var parentVal string
 	if err == nil {
 		val = GetDbValue(db, FILES_BUCKET, path)
+		parentDir, _ := getParentDir(path)
+		parentVal = GetDbValue(db, FILES_BUCKET, parentDir)
 	} else {
 		val = err.Error()
 	}
@@ -238,14 +282,16 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lblfmt := "<h1>Arcpics Label: %s</h1>\npath: %s %s<hr/>\n"
+	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s %s<hr/>\n"
 	comments := ""
 	if jd.MostComment != "" {
 		comments = "most comments: " + jd.MostComment
 	}
-	fmt.Fprintf(w, lblfmt, label, path, comments)
+	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
+	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
+	fmt.Fprint(w, "<button onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
-	head := "<pre>%33s %55s %45s %s\n"
+	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"
 	fmt.Fprintf(w, head, `<a href="?C=N;O=D">Name</a>`, `<a href="?C=M;O=A">Last modified</a>`, `<a href="?C=S;O=A">Size</a>`, `<a href="?C=D;O=A">Description</a>`)
 	parentDir, _ := getParentDir(path)
 	if path != "./" {
@@ -260,14 +306,15 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Thumbnail images
-	fmt.Fprint(w, "\n<hr/>\n")
+	fmt.Fprint(w, "\n</pre><hr/>\n")
 	for _, f := range jd.Files {
-		if strings.HasSuffix(strings.ToLower(f.Name), ".jpg") {
+		if isJpegFile(f.Name) {
 			title := f.Name + ": " + f.Comment
-			fmt.Fprintf(w, `<img src="/label-dir/%s/%s/%s" title="%s"/> `, label, path, f.Name, title)
+			fmt.Fprintf(w, `<img src="/label-dir/%s/%s/%s" title="%s"/>%s`, label, path, f.Name, title, "\n")
 		}
 	}
-
+	fmt.Fprint(w, "\n<br/>\n")
+	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
 }
 
 func Web(port int) {

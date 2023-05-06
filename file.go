@@ -284,12 +284,6 @@ func readJsonDirData(fname string) (JdirType, error) {
 	err := json.Unmarshal(fileBytes, &userData)
 	return userData, err
 }
-func getJpegComment(fname string) string {
-	var j jpeg.JpegReader
-	j.Open(fname, false) // verbose=false
-	j.Decode()
-	return j.Comment
-}
 func updateByJpegValues(file *JfileType, fname string) {
 	var j jpeg.JpegReader
 	j.Open(fname, false) // verbose=false
@@ -307,18 +301,21 @@ func skipFile(skipFiles []string, fileName string) bool {
 }
 
 /*
-func skipDirByUser(dir string, skipFiles []string) error {
-	f, _ := os.Open(dir)
-	name := f.Name()
-	fmt.Printf("TEST skipDirByUser dir=%s name=%s\n", dir, name)
-	if skipFile(skipFiles, name) {
-		return fs.SkipDir
-		//fmt.Errorf(ErrSkippedByUser)
+	func skipDirByUser(dir string, skipFiles []string) error {
+		f, _ := os.Open(dir)
+		name := f.Name()
+		fmt.Printf("TEST skipDirByUser dir=%s name=%s\n", dir, name)
+		if skipFile(skipFiles, name) {
+			return fs.SkipDir
+			//fmt.Errorf(ErrSkippedByUser)
+		}
+		return nil
 	}
-	return nil
-}
 */
-
+func isJpegFile(fileName string) bool {
+	n := strings.ToLower(fileName)
+	return strings.HasSuffix(n, "jpg") || strings.HasSuffix(n, "jpeg")
+}
 func makeJdir(dir string) (JdirType, error) {
 	var jd JdirType
 	var userData JdirType
@@ -350,11 +347,8 @@ func makeJdir(dir string) (JdirType, error) {
 		if !skipFile(userData.Skip, file.Name) {
 			file.Size = fmt.Sprintf("%d", info.Size())
 			file.Time = info.ModTime().Format(timeStampJsonFormat)
-			if strings.HasSuffix(strings.ToLower(file.Name), "jpg") {
+			if isJpegFile(file.Name) {
 				updateByJpegValues(&file, filepath.Join(dir, file.Name))
-				//				file.Comment = getJpegComment(filepath.Join(dir, file.Name))
-				//			} else {
-				//				file.Comment = "my own comment, OK? ReadJpegComment"
 			}
 			counter[file.Comment]++
 			jd.Files = append(jd.Files, file)
