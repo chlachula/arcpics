@@ -64,7 +64,7 @@ func route(w http.ResponseWriter, r *http.Request) {
 func pageBeginning(title string) string {
 	htmlPage := `<html><head>  <title>%s</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <link rel="icon" type="image/ico" href="favicon.ico">	
+  <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/klementinum/main/usage/to_embed/img/favicon1.ico">	
 <style>
 </style>
 <script>
@@ -108,7 +108,9 @@ func webMenu(link string) string {
 func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics home"))
 	fmt.Fprint(w, webMenu("/"))
-	fmt.Fprint(w, "<h1>Home</h1>")
+	fmt.Fprint(w, "<h1>Arcpics - labeled external archives management for pictures and another files</h1>\n")
+	imgSrc := "https://lh3.googleusercontent.com/3O6QhFBHS9tb6U-Guk_cGUBYQTKmzBBd8Z3ldi7fK4d-gRiiQxYPvnCmKnDTB3IU86MbY0yw-jIaZhg62vaTajouUYlhqG0AzoSV-UJ74o4ewdWtB51CQKlgTaKQjTftDJiUV-tBa8j3cuPL4XlbHagABnBzTu4JdJ5P8FHgn7TqJSRYENYwAZIg60NQmi6OnGqDSElr30Aeghz7_aQ9mAqtb5c4aqxfiJSTuqbZQuwvtBDMifRCoS2WX9jgyc2W2hh7gFYGOn9xLKVvnns9q5xlg97QSYTmkpQW3DYe7QgQc7uKJe_6yQ-xG2Nw7F5k4yxsZiLJ9EA6vhmIL3OAuu9dbi9AxhYKlZ3yVhjncZajM2e3qdGoFFMnc8klBx191xqFyOEDpgX6c2YCmn_SJ-HcOmlo-v_1Uk5f7Mre4_-nK4BOlSHjmx7Ojur3ERpnLbWgQNJ09Sz6-uo58oBW-V8cIgwCes9fo97PBVzUQjBeoncZ2sa76sR_AQQfKOl2nnsQ2Ez6UI73r1S__A6cDRQhy4cFOIGg9P4FbUrx0UDJAoDswfD7h3w3tl6ASY2FB8ogyDrDEfnrh-XItzQL-VU21uuSiCaQYXTpetgXSAr-jifsTd4Xh5eJ2iiL3rCH21aJh_Gl_7pYfl2g6P82T0xdt-r2hXT6CFp5dvpBZGA1jQ1ZpoKwDN4J0n9NCBfnuZscn5Wopst3ABKF94NBMI-nV1bSye-zLOjNC0qUVQWreu8qr1yUy_FkKl6gKcVMGIv3G-rR1NNpD2LGyjln2PqDeviZFTxGCjfhDOjr1t75mGUAkgAk4iC5dYv-S1iCAB8rC1HeY0dT-IZltLljS5oTrBwsXIjyF2_syrnhyiD4srdX370mQoe5Jemoa2rlSKz13cvCJm0GWq2v5YOBzKwE_lVrz405r-x0oZYm58ZWioC4kQ=w1307-h980-s-no?authuser=0"
+	fmt.Fprintf(w, "<img src=\"%s\" />\n", imgSrc)
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))
@@ -159,13 +161,15 @@ func pageLabels(w http.ResponseWriter, r *http.Request) {
 	if len(labels) < 1 {
 		labelsString += " no labels"
 	} else {
-		labelsString += "\n"
+		labelsString += "\n<pre>"
 		for _, label := range labels {
-			labelsString += fmt.Sprintf(`<br/>%s `, label)
-			labelsString += fmt.Sprintf(`<a href="/label-list/%s">list</a> %s `, label, "\n")
-			labelsString += fmt.Sprintf(`<a href="/label-dir/%s/">dir</a>%s`, label, "\n")
+			labelsString += fmt.Sprintf(`%-10s `, label)
+			labelsString += fmt.Sprintf(`<a href="/label-list/%s">list</a>%s`, label, " ")
+			labelsString += fmt.Sprintf(`<a href="/label-dir/%s/">dir</a>%s`, label, " ")
+			labelsString += getSystemLabelSummary(label)
+			labelsString += "\n"
 		}
-		labelsString += "\n"
+		labelsString += "</pre>\n"
 	}
 	htmlPage := `<h1>Arcpics Labels:</h1>%s<hr/><h5>Label dababases are located inside of %s`
 	fmt.Fprintf(w, htmlPage, labelsString, dbDir)

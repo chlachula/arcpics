@@ -75,6 +75,38 @@ func insertSystemLabelValue(db *bolt.DB, value string) error {
 	})
 	return err
 }
+func insertSystemLabelSummary(db *bolt.DB, label, value string) error {
+	key := fmt.Sprintf(LABEL_SUMMARY_fmt, label)
+	keyBytes := []byte(key)
+	err := db.Update(func(tx *bolt.Tx) error {
+		err := tx.Bucket([]byte(SYSTEM_BUCKET)).Put(keyBytes, []byte(value))
+		if err != nil {
+			return fmt.Errorf("bucket %s - Could not insert entry: %v", SYSTEM_BUCKET, err)
+		}
+		return nil
+	})
+	return err
+}
+func getSystemLabelSummary(label string) string {
+	dbDir := GetDatabaseDirName()
+	databaseName := filepath.Join(dbDir, defaultNameDash+label+".db")
+
+	var db *bolt.DB
+	db, err := bolt.Open(databaseName, 0600, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	key := fmt.Sprintf(LABEL_SUMMARY_fmt, label)
+	keyBytes := []byte(key)
+	var foundBytes []byte
+	db.View(func(tx *bolt.Tx) error {
+		foundBytes = tx.Bucket([]byte(SYSTEM_BUCKET)).Get(keyBytes)
+		return nil
+	})
+	return string(foundBytes)
+}
 func insertNewBucket(db *bolt.DB, bucket []byte) {
 	err := db.Update(func(tx *bolt.Tx) error {
 		_, err := tx.CreateBucketIfNotExists(bucket)
@@ -137,7 +169,7 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 	if err != nil {
 		return arcFS, nil, err
 	}
-	databaseName := filepath.Join(databaseDirName, "arcpics-"+label+".db")
+	databaseName := filepath.Join(databaseDirName, defaultNameDash+label+".db")
 	dbDidExist := FileExists(databaseName)
 
 	// Open the database data file. It will be created if it doesn't exist.

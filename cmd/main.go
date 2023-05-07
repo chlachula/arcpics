@@ -23,7 +23,7 @@ func write_dirs_to_db(i int, errMsg string) int {
 	i = increaseAndCheckArgumentIndex(i, errMsg)
 	arcFS, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args[i])
 	exitIfErrorNotNil(err)
-	err = arcpics.ArcpicsFiles2DB(db, arcFS.Dir)
+	err = arcpics.ArcpicsFiles2DB(db, arcFS)
 	exitIfErrorNotNil(err)
 	db.Close()
 	return i
@@ -35,9 +35,9 @@ func update_dirs_or_db(i int, updateDirs bool, errMsg string) int {
 	arcFS, db, err = arcpics.AssignPicturesDirectoryWithDatabase(os.Args[i])
 	exitIfErrorNotNil(err)
 	if updateDirs {
-		err = arcpics.ArcpicsFilesUpdate(arcFS.Dir)
+		err = arcpics.ArcpicsFilesUpdate(arcFS)
 	} else {
-		err = arcpics.ArcpicsDatabaseUpdate(db, arcFS.Dir)
+		err = arcpics.ArcpicsDatabaseUpdate(db, arcFS)
 	}
 	exitIfErrorNotNil(err)
 	db.Close()

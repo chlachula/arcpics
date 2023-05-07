@@ -190,13 +190,13 @@ func byUserData_thisDirShouldBeSkipped(dir string, name string) bool {
 }
 
 // Updating directory tree json files according to dir content
-func ArcpicsFilesUpdate(dir string) error {
+func ArcpicsFilesUpdate(arcFS ArcpicsFS) error {
 	startTime := time.Now()
 	countDir := 0
 	countCreate := 0
 	countUpdate := 0
 	changedDirs := make([]string, 0)
-	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println(err.Error(), "fs.SkipDir", path)
 			return fs.SkipDir

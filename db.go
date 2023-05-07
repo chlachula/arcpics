@@ -47,9 +47,14 @@ func getParentDir(relPath string) (string, error) {
 	return relPath[:i], nil // path abc/def
 }
 
+func insertLabelSummary(db *bolt.DB, label string, countDir int, countCreate int, countUpdate int, duration time.Duration) {
+	sum := fmt.Sprintf("directories: %d, new: %d, updated: %d, elapsed time: %s", countDir, countCreate, countUpdate, duration)
+	insertSystemLabelSummary(db, label, sum)
+}
+
 // Writting the directory tree json files to database
-func ArcpicsFiles2DB(db *bolt.DB, dir string) error {
-	rootDir, err := filepath.Abs(dir)
+func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
+	rootDir, err := filepath.Abs(arcFS.Dir)
 	if err != nil {
 		return err
 	}
@@ -61,7 +66,7 @@ func ArcpicsFiles2DB(db *bolt.DB, dir string) error {
 	countCreate := 0
 	countUpdate := 0
 	changedDirs := make([]string, 0)
-	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println(err.Error(), "fs.SkipDir", path)
 			return fs.SkipDir
@@ -116,13 +121,13 @@ func ArcpicsFiles2DB(db *bolt.DB, dir string) error {
 	if Verbose {
 		fmt.Printf("ArcpicsFiles2DB: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
 	}
+	insertLabelSummary(db, arcFS.Label, countDir, countCreate, countUpdate, time.Since(startTime))
 	return nil
-
 }
 
 // Updating database according to the directory tree json files
-func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
-	rootDir, err := filepath.Abs(dir)
+func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
+	rootDir, err := filepath.Abs(arcFS.Dir)
 	if err != nil {
 		return err
 	}
@@ -131,7 +136,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 	}
 	startTime := time.Now()
 	countDir := 0
-	filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println("fs.SkipDir", path)
 			return fs.SkipDir
@@ -161,11 +166,13 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, dir string) error {
 		return nil
 	})
 	if countDir < 1 {
-		fmt.Printf("ArcpicsDatabaseUpdate Warning: no %s files found at %s", defaultNameJson, dir)
+		fmt.Printf("ArcpicsDatabaseUpdate Warning: no %s files found at %s", defaultNameJson, arcFS.Dir)
 	}
 	if Verbose {
 		fmt.Printf("ArcpicsDatabaseUpdate: %d files %s found, elapsed time: %s\n", countDir, defaultNameJson, time.Since(startTime))
 	}
+	insertLabelSummary(db, arcFS.Label, countDir, -1, -1, time.Since(startTime))
+
 	return nil
 }
 

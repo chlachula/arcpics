@@ -20,6 +20,7 @@ var SYSTEM_BUCKET = []byte("SYSTEM")
 var FILES_BUCKET = []byte("FILES")
 
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
+var LABEL_SUMMARY_fmt = "LABEL-%s-SUMMARY"
 
 var defaultNameJson = defaultName + ".json"                          // arcpics.json
 var defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
