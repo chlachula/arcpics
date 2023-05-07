@@ -68,17 +68,30 @@ func pageBeginning(title string) string {
 <style>
 </style>
 <script>
- function toggleHideDisplay(myDIV) {
-   var x = document.getElementById(myDIV);
-   if (x.style.display === "none") {
-     x.style.display = "block";
-   } else {
-     x.style.display = "none";
-   }
- }
-</script>
+var globalLabel = "GlobalLabelNotSet"
+function toggleHideDisplay(myDIV) {
+	var x = document.getElementById(myDIV);
+	if (x.style.display === "none") {
+	  x.style.display = "block";
+	} else {
+	  x.style.display = "none";
+	}
+  }
+  function mountLabel(label) {
+	console.log("mount label 1: "+label)
+	//alert("mount label: "+label)
+	globalLabel = label
+	document.getElementById('fileselector').click()
+  }
+  function mountLabelSet(e) {
+	var fileselector = document.getElementById('fileselector');
+	console.log("mount label 2 "+globalLabel+":"+fileselector.value)
+	alert("mount label 2 "+globalLabel+":"+fileselector.value)
+  }
+ </script>
 </head>
 <body style="text-align:left"><a name="top"></a>
+<input id="fileselector" type="file" onchange="mountLabelSet(event)" webkitdirectory directory multiple="false" style="display:none" />
 `
 	return fmt.Sprintf(htmlPage, title)
 }
@@ -167,6 +180,7 @@ func pageLabels(w http.ResponseWriter, r *http.Request) {
 			labelsString += fmt.Sprintf(`<a href="/label-list/%s">list</a>%s`, label, " ")
 			labelsString += fmt.Sprintf(`<a href="/label-dir/%s/">dir</a>%s`, label, " ")
 			labelsString += getSystemLabelSummary(label)
+			labelsString += LabelMounts.Html(label)
 			labelsString += "\n"
 		}
 		labelsString += "</pre>\n"

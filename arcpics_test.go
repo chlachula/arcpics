@@ -204,7 +204,7 @@ func TestArcpicsFilesUpdate(t *testing.T) {
 	if err != nil {
 		t.Errorf("error - ArcpicsFS: " + err.Error())
 	}
-	err = ArcpicsFilesUpdate(fs.Dir)
+	err = ArcpicsFilesUpdate(fs)
 	if err != nil {
 		t.Errorf("error - ArcpicsFilesUpdate: " + err.Error())
 	}
@@ -305,4 +305,24 @@ func TestGetParentDir(t *testing.T) {
 	if want != got {
 		t.Errorf("1c error %s - want: %s; got: %s", fn, want, got)
 	}
+}
+
+// go test -run LabelMountsType
+func TestLabelMountsType(t *testing.T) {
+	fn := "LabelMountsType"
+	var m LabelMountsType = make(map[string]string)
+
+	want := ""
+	got := m.Get("anyNotExistingLabel")
+	if want != got {
+		t.Errorf("1. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+	want = "E:\\Arc"
+	m.Set("L01", want)
+	got = m.Get("L01")
+	if want != got {
+		t.Errorf("2. error %s - want: %s; got: %s", fn, want, got)
+	}
+
 }

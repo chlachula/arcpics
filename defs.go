@@ -22,12 +22,27 @@ var FILES_BUCKET = []byte("FILES")
 var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
 var LABEL_SUMMARY_fmt = "LABEL-%s-SUMMARY"
 
+var LabelMounts LabelMountsType = make(map[string]string)
+
 var defaultNameJson = defaultName + ".json"                          // arcpics.json
 var defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
 var timeStampJsonFormat = "2006-01-02_15:04:05.99"
 
 var ErrSkippedByUser = "error - skipped by user"
 var Verbose bool = false
+
+// File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
+// and at least one character long arbitrary extension.
+// For example file "arcpics-db-label.a" has label value "a"
+// or "arcpics-db-label.my1TB_hard_drive" has label value "my1TB_hard_drive"
+//
+// ATTENTION!!
+// ArcpicsFS work fine with fs.WalkDir unless there are any file operations
+// Then use filepath.WalkDir(ArcpicsFS.Dir,...
+type ArcpicsFS struct {
+	Dir   string
+	Label string
+}
 
 type JfileType = struct {
 	Name      string
@@ -44,6 +59,7 @@ type JdirType = struct {
 	Files       []JfileType `json:",omitempty"`
 	Dirs        []string    `json:",omitempty"`
 }
+type LabelMountsType map[string]string
 
 var HelpTextFmt = `=== arcpics: manage archived of pictures not only at external hard drives ===
 ver %s
