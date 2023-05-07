@@ -114,7 +114,37 @@ func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))
 	fmt.Fprint(w, webMenu("/about"))
 	fmt.Fprint(w, "<h1>About Arcpics</h1>")
-	fmt.Fprint(w, "Here is the description ...")
+	fmt.Fprintf(w, `<b>Arcpics</b> is the program for management external picture archives, or any other files.
+	<br/><br/>
+	External archive can be at external harddrive, external USB flash stick, memory card, etc.
+	Archived directory has to be labeled by special file with prefix <b>%s</b> and extension of this file is actually name label,
+	for example <b>%sVacation-2023</b>. 
+	Label should be written on medium itself, e.g. by marker or pasted tag, to help easie find it. 
+	Archived directory is most the time the root directory on archived medium, 
+	but it could be also at any subdirectory.
+	Label file can be created with option -c, for example:
+	<pre>
+	arcpics -c /media/joe/USB32/Arc-Pics Vacation-2023
+	arcpics -c E:\\Arc-Pics Vacation-2023                #on Windows
+	</pre>
+	In a next step can be created label database in home subdirectory %s with option -a1, e.g. following command would create file <b>%sVacation-2023.db</b>
+	<pre>
+	arcpics -a1 /media/joe/USB32/Arc-Pics Vacation-2023
+	arcpics -a1 E:\\Arc-Pics Vacation-2023                #on Windows
+	</pre>
+	In the last step can be used any from label options -ll,  -la, lf, ls to display text information on command line terminal 
+	or option -w to start local webserver on default port 8080 which can be modified with option -p.
+	For example after following command browser should listen at http://localhost:8081
+	<pre>
+	arcpics -p 8081 -w
+	</pre>
+	<br/><br/>
+	`, defaultNameDashLabelDot, defaultNameDashLabelDot, dotDefaultName, defaultNameDash)
+	fmt.Fprintf(w, `<b>Arcpics command line help text</b>
+	<pre>
+	%s
+	</pre>
+	`, CmdHelp(""))
 }
 func pageLabels(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics Labels"))

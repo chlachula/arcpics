@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -13,43 +12,10 @@ import (
 )
 
 var db *bolt.DB
-var version string = "0.0.3"
 var port = 8080
 
-var helpText = `=== arcpics: manage archived of pictures not only at external hard drives ===
-ver %s
-Usage arguments:
- -h help text
- -a1 picturesDirName      #write arcpics.json dir files directly to DB in 1 step
- -af picturesDirName      #update arcpics.json dir files
- -ab picturesDirName      #update database 
- -d databaseDirName       #database dir location other then default ~/.arcpics
- -c databaseDirName label #create label inside of database directory
- -ll                      #list all labels
- -la label                #list all dirs on USB  with this label
- -lf label                #word frequency
- -ls label query          #list specific resources
- -v                       #verbose output
- -p port                  #web port definition
- -w                       #start web - default port 8080
-
-Examples:
--c %sArc-Pics Vacation-2023 #creates label file inside of directory %sArc-Pics
--af %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
--ab %sArc-Pics               #updates database %sVacation-2023.db
-`
-
 func help(msg string) {
-	if msg != "" {
-		fmt.Println(msg)
-	}
-	r := "/media/joe/USB32/"
-	h := "~/.arcpics/"
-	if runtime.GOOS == "windows" {
-		r = "E:\\"
-		h = "C:\\Users\\joe\\.arcpics\\"
-	}
-	fmt.Printf(helpText, version, r, r, r, r, r, h)
+	fmt.Print(arcpics.CmdHelp(msg))
 }
 func write_dirs_to_db(i int, errMsg string) int {
 	var arcFS arcpics.ArcpicsFS

@@ -2,12 +2,13 @@ package arcpics
 
 /*
 line:
- duplicate Windows — Shift + Alt + Up/Down
- select    Windows/Ubuntu — Ctrl + L
- delete    Windows/Ubuntu — Ctrl + Shift + K
- move Windows/Ubuntu — Alt + Up/Down arrow
-*/
 
+	duplicate Windows — Shift + Alt + Up/Down
+	select    Windows/Ubuntu — Ctrl + L
+	delete    Windows/Ubuntu — Ctrl + Shift + K
+	move Windows/Ubuntu — Alt + Up/Down arrow
+*/
+var Version string = "0.0.3"
 var defaultName = "arcpics"                              // arcpics
 var defaultNameDash = defaultName + "-"                  // arcpics-
 var defaultNameDashLabel = defaultNameDash + "label"     // arcpics-label
@@ -42,3 +43,26 @@ type JdirType = struct {
 	Files       []JfileType `json:",omitempty"`
 	Dirs        []string    `json:",omitempty"`
 }
+
+var HelpTextFmt = `=== arcpics: manage archived of pictures not only at external hard drives ===
+ver %s
+Usage arguments:
+ -h help text
+ -a1 picturesDirName      #write arcpics.json dir files directly to DB in 1 step
+ -af picturesDirName      #update arcpics.json dir files
+ -ab picturesDirName      #update database 
+ -d databaseDirName       #database dir location other then default ~/.arcpics
+ -c databaseDirName label #create label inside of database directory
+ -ll                      #list all labels
+ -la label                #list all dirs on USB  with this label
+ -lf label                #word frequency
+ -ls label query          #list specific resources
+ -v                       #verbose output
+ -p port                  #web port definition
+ -w                       #start web - default port 8080
+
+Examples:
+-c %sArc-Pics Vacation-2023 #creates label file inside of directory %sArc-Pics
+-af %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
+-ab %sArc-Pics               #updates database %sVacation-2023.db
+`

@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -533,4 +534,18 @@ func readEntireFileToBytes(fname string) ([]byte, error) {
 		return bytes, err
 	}
 	return bytes, nil
+}
+func CmdHelp(msg string) string {
+	s := ""
+	if msg != "" {
+		s = s + msg + "\n"
+	}
+	r := "/media/joe/USB32/"
+	h := "~/.arcpics/"
+	if runtime.GOOS == "windows" {
+		r = "E:\\"
+		h = "C:\\Users\\joe\\.arcpics\\"
+	}
+	s = s + fmt.Sprintf(HelpTextFmt, Version, r, r, r, r, r, h)
+	return s
 }
