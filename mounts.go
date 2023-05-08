@@ -21,3 +21,15 @@ func (lm *LabelMountsType) Html(label string) string {
 	}
 	return s
 }
+func MountLabeledDirectory(dir string) {
+	if !DirExists(dir) {
+		fmt.Printf("-m %s :directory doesn't exist", dir)
+		return
+	}
+	label, err := getLabel(dir)
+	if err != nil {
+		fmt.Printf("-m %s :error %s", dir, err.Error())
+		return
+	}
+	LabelMounts.Set(label, dir)
+}

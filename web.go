@@ -3,8 +3,10 @@ package arcpics
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -19,6 +21,8 @@ var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
 var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
 var reLabelFileJpegStr = `(?m)\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)\/(?P<JpgFile>.*\.jpg)$`
 var reLabelFileJpeg = regexp.MustCompile(reLabelFileJpegStr)
+var reImageFileStr = `(?m)^\/image(?P<Fname>\/.+)$`
+var reImageFile = regexp.MustCompile(reImageFileStr)
 
 /**
  * Parses url with the given regular expression and returns the
@@ -49,6 +53,9 @@ func route(w http.ResponseWriter, r *http.Request) {
 	case reLabelFileJpeg.MatchString(r.URL.Path):
 		println("case reLabelFileJpeg:", r.URL.Path)
 		pageLabelFileJpeg(w, r)
+	case reImageFile.MatchString(r.URL.Path):
+		println("case reImageFile:", r.URL.Path)
+		pageImageFile(w, r)
 	case reLabelDir.MatchString(r.URL.Path):
 		println("case reLabelDir:", r.URL.Path)
 		pageLabelDir(w, r)
@@ -180,7 +187,7 @@ func pageLabels(w http.ResponseWriter, r *http.Request) {
 			labelsString += fmt.Sprintf(`<a href="/label-list/%s">list</a>%s`, label, " ")
 			labelsString += fmt.Sprintf(`<a href="/label-dir/%s/">dir</a>%s`, label, " ")
 			labelsString += getSystemLabelSummary(label)
-			labelsString += LabelMounts.Html(label)
+			labelsString += " " + LabelMounts.Html(label)
 			labelsString += "\n"
 		}
 		labelsString += "</pre>\n"
@@ -206,6 +213,35 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	for _, k := range keys {
 		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
 		fmt.Fprintf(w, "<br/> %s\n", link)
+	}
+}
+
+func pageImageFile(w http.ResponseWriter, r *http.Request) {
+	params := getParams(reImageFileStr, r.URL.Path)
+	fname := params["Fname"]
+	f, err := os.Open(fname)
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "<h1>%d - File not found: %s - %s</h1>", http.StatusNotFound, fname, err.Error())
+		return
+	}
+	defer f.Close()
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	buf := make([]byte, 64*1024)
+	for {
+		n, err := f.Read(buf)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		if n > 0 {
+			w.Write(buf)
+		}
 	}
 }
 
@@ -354,11 +390,20 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Thumbnail images
+	mountDir := LabelMounts.Get(label)
 	fmt.Fprint(w, "\n</pre><hr/>\n")
 	for _, f := range jd.Files {
 		if isJpegFile(f.Name) {
 			title := f.Name + ": " + f.Comment
-			fmt.Fprintf(w, `<img src="/label-dir/%s/%s/%s" title="%s"/>%s`, label, path, f.Name, title, "\n")
+			if mountDir != "" {
+				title += " - click for full picture"
+			}
+			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" title="%s"/>`, label, path, f.Name, title)
+			if mountDir != "" {
+				fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
+			} else {
+				fmt.Fprintf(w, `%s%s`, img, "\n")
+			}
 		}
 	}
 	fmt.Fprint(w, "\n<br/>\n")

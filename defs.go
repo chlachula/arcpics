@@ -8,7 +8,7 @@ line:
 	delete    Windows/Ubuntu — Ctrl + Shift + K
 	move Windows/Ubuntu — Alt + Up/Down arrow
 */
-var Version string = "0.0.3"
+var Version string = "0.0.4"
 var defaultName = "arcpics"                              // arcpics
 var defaultNameDash = defaultName + "-"                  // arcpics-
 var defaultNameDashLabel = defaultNameDash + "label"     // arcpics-label
@@ -75,6 +75,7 @@ Usage arguments:
  -lf label                #word frequency
  -ls label query          #list specific resources
  -v                       #verbose output
+ -m picturesDirName       #mount original labeled dir for web
  -p port                  #web port definition
  -w                       #start web - default port 8080
 

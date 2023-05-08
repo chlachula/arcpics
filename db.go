@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -47,8 +48,24 @@ func getParentDir(relPath string) (string, error) {
 	return relPath[:i], nil // path abc/def
 }
 
-func insertLabelSummary(db *bolt.DB, label string, countDir int, countFiles int, duration time.Duration) {
-	sum := fmt.Sprintf("directories: %d, files: %d, elapsed time: %s", countDir, countFiles, duration)
+// https://yourbasic.org/golang/formatting-byte-size-to-human-readable-format/
+func ByteCountIEC(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %ciB",
+		float64(b)/float64(div), "KMGTPE"[exp])
+}
+
+func insertLabelSummary(db *bolt.DB, label string, countDir int, countFiles int, countJpegs int, totalSize int, duration time.Duration) {
+	s := ByteCountIEC(int64(totalSize))
+	sum := fmt.Sprintf("directories:%5d, files:%7d, jpegs:%6d, total size:%10s, elapsed time: %s", countDir, countFiles, countJpegs, s, duration)
 	insertSystemLabelSummary(db, label, sum)
 }
 
@@ -64,6 +81,8 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 	startTime := time.Now()
 	countDir := 0
 	countFiles := 0
+	countJpegs := 0
+	totalSize := 0
 	countCreate := 0
 	countUpdate := 0
 	changedDirs := make([]string, 0)
@@ -86,11 +105,16 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 				return err
 			}
 			countFiles += len(jDir.Files)
-			//			if err != nil {
-			//				return err
-			//			}
-			if Verbose {
-				fmt.Printf("\rArcpicsFiles2DB: %4df %4s %s\n", len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), path)
+			for _, f := range jDir.Files {
+				size, _ := strconv.Atoi(f.Size)
+				totalSize += size
+				if isJpegFile(f.Name) {
+					countJpegs++
+				}
+			}
+			verbose := true
+			if verbose {
+				fmt.Printf("\r%4dd %4df %4s %s  ", countDir, len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), path)
 			}
 			changedDirs = append(changedDirs, path)
 			countCreate++
@@ -122,7 +146,7 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 	if Verbose {
 		fmt.Printf("ArcpicsFiles2DB: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
 	}
-	insertLabelSummary(db, arcFS.Label, countDir, countFiles, time.Since(startTime))
+	insertLabelSummary(db, arcFS.Label, countDir, countFiles, countJpegs, totalSize, time.Since(startTime))
 	return nil
 }
 
@@ -137,6 +161,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 	}
 	startTime := time.Now()
 	countDir := 0
+
 	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println("fs.SkipDir", path)
@@ -172,7 +197,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 	if Verbose {
 		fmt.Printf("ArcpicsDatabaseUpdate: %d files %s found, elapsed time: %s\n", countDir, defaultNameJson, time.Since(startTime))
 	}
-	insertLabelSummary(db, arcFS.Label, countDir, -1, time.Since(startTime))
+	insertLabelSummary(db, arcFS.Label, countDir, -1, -2, -3, time.Since(startTime))
 
 	return nil
 }

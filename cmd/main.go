@@ -118,6 +118,9 @@ func main() {
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
 			arcpics.ArcpicsWordFrequency(db)
+		case "-m":
+			i = increaseAndCheckArgumentIndex(i, "No dir to mount after -m")
+			arcpics.MountLabeledDirectory(os.Args[i])
 		case "-p":
 			i = increaseAndCheckArgumentIndex(i, "No port after -p")
 			p, err := strconv.Atoi(os.Args[i])
