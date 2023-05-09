@@ -1,6 +1,7 @@
 package arcpics
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -321,6 +322,71 @@ func TestLabelMountsType(t *testing.T) {
 	want = "E:\\Arc"
 	m.Set("L01", want)
 	got = m.Get("L01")
+	if want != got {
+		t.Errorf("2. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+	want = "<button onclick=\"mountLabel('')\">mount label </button>"
+	got = m.Html("")
+	if want != got {
+		t.Errorf("3. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+	want = "<b>mounted at</b> E:\\Arc"
+	got = m.Html("L01")
+	if want != got {
+		t.Errorf("4. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+	want = ""
+	MountLabeledDirectory("not-existent/folder")
+	got = LabelMounts.Get("TEST")
+	if want != got {
+		t.Errorf("5. error %s - want: %s; got: %s ", fn, want, got)
+	}
+	want = "example/Arc-Pics"
+	MountLabeledDirectory("example/Arc-Pics")
+	got = LabelMounts.Get("TEST")
+	if want != got {
+		t.Errorf("6. error %s - want: %s; got: %s (Test should be run from .../arcpics/.)", fn, want, got)
+	}
+}
+
+// go test -run TestByteCountIEC
+func TestByteCountIEC(t *testing.T) {
+	fn := "LabelMountsType"
+	want := "1.0 TiB"
+	got := ByteCountIEC(int64(1024 * 1024 * 1024 * 1024))
+	if want != got {
+		t.Errorf("1. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+}
+
+// go test -run TestByteCountIEC
+func TestGetParams(t *testing.T) {
+	fn := "getParams"
+	p := getParams(reLabelFileJpegStr, "http://localhost/label-dir/MIRACLE/my/pictures/family2023.jpg")
+	want := "map[JpgFile:family2023.jpg Label:MIRACLE Path:my/pictures]"
+	got := fmt.Sprintf("%v", p)
+	if want != got {
+		t.Errorf("1. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+}
+
+// go test -run TestLastDir
+func TestLastDir(t *testing.T) {
+	fn := "lastDir"
+
+	want := "my"
+	got := lastDir("my")
+	if want != got {
+		t.Errorf("1. error %s - want: %s; got: %s", fn, want, got)
+	}
+
+	want = "dir"
+	got = lastDir("my/dir")
 	if want != got {
 		t.Errorf("2. error %s - want: %s; got: %s", fn, want, got)
 	}

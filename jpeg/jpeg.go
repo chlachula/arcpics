@@ -68,8 +68,11 @@ const (
 	ff_APP0 = 0xE0 // application #0
 	ff_APP1 = 0xE1 // EXIF, next two byte are SIZE
 	ff_APP2 = 0xE2 // application #2
+	ff_APP3 = 0xE3 // application #3
 	ff_APP4 = 0xE4 // application #4
+	ff_APPC = 0xEC // application #C
 	ff_APPD = 0xED // application #D
+	ff_APPE = 0xEE // application #E
 	ff_COMM = 0xFE // comment,  next two byte are SIZE
 
 )
@@ -98,30 +101,39 @@ func (j *JpegReader) Open(fname string, verbose bool) error {
 	return nil
 }
 
-func (j *JpegReader) NextByte() byte {
+func (j *JpegReader) NextByte() (byte, error) {
 	b, err := j.br.ReadByte()
-	if err != nil {
-		fmt.Printf("error reading file %s\n", j.Filename)
-		panic(err)
-	}
+	//if err != nil {
+	//	fmt.Printf("error reading file %s\n", j.Filename)
+	//	panic(err)
+	//}
+
 	//if j.charCounter > j.maxCounter {
 	//	pa nic("char limit over")
 	//}
 	j.charCounter++
-	return b
+	return b, err
 }
 
-func (j *JpegReader) SegmentLength() int {
+func (j *JpegReader) SegmentLength() (int, error) {
 	dataLenBytes := make([]byte, 2)
-	dataLenBytes[0] = j.NextByte()
-	dataLenBytes[1] = j.NextByte()
-	return int(binary.BigEndian.Uint16(dataLenBytes))
+	var err error
+	if dataLenBytes[0], err = j.NextByte(); err != nil {
+		return 0, err
+	}
+	if dataLenBytes[1], err = j.NextByte(); err != nil {
+		return 0, err
+	}
+	return int(binary.BigEndian.Uint16(dataLenBytes)), nil
 }
 func (j *JpegReader) Bytes0(length int) ([]byte, error) {
 	var data []byte
+	var err error
 	data = make([]byte, length)
 	for i := 0; i < length; i++ {
-		data[i] = j.NextByte()
+		if data[i], err = j.NextByte(); err != nil {
+			return data, err
+		}
 	}
 	return data, nil
 }
@@ -149,10 +161,13 @@ func (j *JpegReader) PrintMark(markName string, m byte) {
 
 func (j *JpegReader) PrintMarkAndGetData(markName string, m byte) (int, []byte) {
 	j.PrintMark(markName, m)
-	length := j.SegmentLength()
+	length, err := j.SegmentLength()
+	if err != nil {
+		fmt.Printf("error reading segmentlength at file %s: %s\n", j.Filename, err.Error())
+	}
 	data, err := j.Bytes(length - 2)
 	if err != nil {
-		fmt.Printf("error at file %s: %s\n", j.Filename, err.Error())
+		fmt.Printf("error reading data at file %s: %s\n", j.Filename, err.Error())
 	}
 	return length, data
 }
@@ -204,50 +219,80 @@ func (j *JpegReader) PrintMarkStartOfFrame0(markName string, m byte) {
 	}
 }
 
-func (j *JpegReader) ScanToFFmark() byte {
-	c := j.NextByte()
+func (j *JpegReader) ScanToFFmark() (byte, error) {
+	var c byte
+	var err error
+	if c, err = j.NextByte(); err != nil {
+		return c, err
+	}
 	if j.verbose {
 		fmt.Printf("\n%06x SSS %02x = char after ff,  Scan now\n", j.charCounter, c)
 	}
 	for {
 		for c != 0xff {
-			c = j.NextByte()
+			if c, err = j.NextByte(); err != nil {
+				return c, err
+			}
 		}
-		switch m := j.NextByte(); m {
+		var m byte
+		if m, err = j.NextByte(); err != nil {
+			return m, err
+		}
+		switch m {
 		case 0xFF:
 			j.PrintMark("FFF", m)
-			c = j.NextByte()
+			if c, err = j.NextByte(); err != nil {
+				return c, err
+			}
 			if c == 0x00 {
-				c = j.NextByte()
+				if c, err = j.NextByte(); err != nil {
+					return c, err
+				}
 			}
 		case ff_RST0, ff_RST1, ff_RST2, ff_RST3, ff_RST4, ff_RST5, ff_RST6, ff_RST7: //restart
 			//j.PrintMark("RST", m)
-			c = j.NextByte()
+			if c, err = j.NextByte(); err != nil {
+				return c, err
+			}
 		case 0x00:
-			c = j.NextByte()
+			if c, err = j.NextByte(); err != nil {
+				return c, err
+			}
 		default:
-			return m
+			return m, nil
 		}
 	}
 }
 
 func (j *JpegReader) Decode() error {
-	cff := j.NextByte()
+	var cff, m byte
+	var err error
+	if cff, err = j.NextByte(); err != nil {
+		return err
+	}
 	if cff != 0xFF {
 		return fmt.Errorf("file %s is not JPEG, does not start by 0xFF, but %02x", j.Filename, cff)
 	}
-	m := j.NextByte()
+	if m, err = j.NextByte(); err != nil {
+		return err
+	}
 	if m != ff_SOI {
 		return fmt.Errorf("not JPEG, does not start by 0xFF%02x, but 0xFF%02x", ff_SOI, m)
 	}
-	cff = j.NextByte()
+	if cff, err = j.NextByte(); err != nil {
+		return err
+	}
 	scan := false
 	for cff == 0xff {
 		if scan {
-			m = j.ScanToFFmark()
+			if m, err = j.ScanToFFmark(); err != nil {
+				return err
+			}
 			scan = false
 		} else {
-			m = j.NextByte()
+			if m, err = j.NextByte(); err != nil {
+				return err
+			}
 		}
 		switch m {
 		case ff_SOF0, ff_SOF2: //start of frame
@@ -264,10 +309,16 @@ func (j *JpegReader) Decode() error {
 			j.PrintMarkExif("AP1", m)
 		case ff_APP2: // application #2
 			j.PrintMark("AP2", m)
+		case ff_APP3: // application #3
+			j.PrintMark("AP3", m)
 		case ff_APP4: // application #4
 			j.PrintMark("AP4", m)
+		case ff_APPC: // application #C
+			j.PrintMark("APC", m)
 		case ff_APPD: // application #D
 			j.PrintMark("APD", m)
+		case ff_APPE: // application #E
+			j.PrintMark("APE", m)
 		case ff_COMM: // comment,  next two byte are SIZE
 			j.PrintMarkComment("COM", m)
 		case ff_SOS: // start of scan
@@ -287,7 +338,9 @@ func (j *JpegReader) Decode() error {
 			break
 		}
 		if !scan {
-			cff = j.NextByte()
+			if cff, err = j.NextByte(); err != nil {
+				return err
+			}
 		}
 	}
 	if j.verbose {
