@@ -48,8 +48,12 @@ type JfileType = struct {
 	Name      string
 	Size      string
 	Time      string //
+	Author    string `json:",omitempty"`
+	Location  string `json:",omitempty"`
+	Keywords  string `json:",omitempty"`
 	Comment   string `json:",omitempty"`
 	Thumbnail []byte `json:",omitempty"`
+	ThumbSrc  string `json:",omitempty"`
 }
 type JdirType = struct {
 	Description string      `json:",omitempty"`

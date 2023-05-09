@@ -148,6 +148,15 @@ func jDirIsEqual(a, b JdirType) bool {
 		return false
 	}
 	for i, af := range a.Files {
+		if af.Author != b.Files[i].Author {
+			return false
+		}
+		if af.Location != b.Files[i].Location {
+			return false
+		}
+		if af.Keywords != b.Files[i].Keywords {
+			return false
+		}
 		if af.Comment != b.Files[i].Comment {
 			return false
 		}
@@ -275,8 +284,22 @@ func updateByJpegValues(file *JfileType, fname string) {
 	var j jpeg.JpegReader
 	j.Open(fname, false) // verbose=false
 	j.Decode()
-	file.Comment = j.Comment
+	s := strings.Split(j.Comment, "|")
+	file.Comment = j.Comment //v1|UTF-8|(c) Josef Chlachula|Rochester MN|home,astro|Northern lights
+	if len(s) > 2 {
+		file.Author = s[2]
+	}
+	if len(s) > 3 {
+		file.Location = s[3]
+	}
+	if len(s) > 4 {
+		file.Keywords = s[4]
+	}
+	if len(s) > 5 {
+		file.Comment = s[5]
+	}
 	file.Thumbnail = j.Thumbnail
+	file.ThumbSrc = j.ThumbSrc
 }
 func skipFile(skipFiles []string, fileName string) bool {
 	for _, skipFile := range skipFiles {

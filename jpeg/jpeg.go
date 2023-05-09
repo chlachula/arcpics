@@ -84,6 +84,7 @@ type JpegReader struct {
 	ImageWidth  int
 	Comment     string
 	Thumbnail   []byte
+	ThumbSrc    string //justo for development
 	verbose     bool
 	maxCounter  int // just to develop and debug
 	charCounter int
@@ -207,6 +208,7 @@ func (j *JpegReader) PrintMarkExif(markName string, m byte) {
 	}
 	if size > 0 {
 		j.Thumbnail = data[start:end]
+		j.ThumbSrc = "Exif"
 	}
 
 }
