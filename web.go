@@ -16,6 +16,7 @@ var mutex = &sync.Mutex{}
 
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
+var reSearch = regexp.MustCompile(`(?m)\/search[\/]{0,1}$`)
 var reLabels = regexp.MustCompile(`(?m)^\/labels[\/]{0,1}$`)
 var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
 var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
@@ -47,6 +48,9 @@ func route(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case reHome.MatchString(r.URL.Path):
 		pageHome(w, r)
+	case reSearch.MatchString(r.URL.Path):
+		println("case reSearch:", r.URL.Path)
+		pageSearch(w, r)
 	case reLabelList.MatchString(r.URL.Path):
 		println("case reLabelList:", r.URL.Path)
 		pageLabelList(w, r)
@@ -102,6 +106,15 @@ function toggleHideDisplay(myDIV) {
 `
 	return fmt.Sprintf(htmlPage, title)
 }
+func webSearch() string {
+	s := `&nbsp; <form action="/search" method="get" style="display: inline;">
+	<span>
+		<input type="text" id="search" name="search" value="" size="100" />
+		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
+	</span>
+	</form>`
+	return s
+}
 func webMenu(link string) string {
 	items := []struct {
 		L string
@@ -121,6 +134,7 @@ func webMenu(link string) string {
 		}
 		s += "</span> "
 	}
+	s += webSearch()
 	s += "\n<hr/>\n"
 	return s
 }
@@ -131,6 +145,13 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>Arcpics - labeled external archives management for pictures and another files</h1>\n")
 	imgSrc := "https://lh3.googleusercontent.com/3O6QhFBHS9tb6U-Guk_cGUBYQTKmzBBd8Z3ldi7fK4d-gRiiQxYPvnCmKnDTB3IU86MbY0yw-jIaZhg62vaTajouUYlhqG0AzoSV-UJ74o4ewdWtB51CQKlgTaKQjTftDJiUV-tBa8j3cuPL4XlbHagABnBzTu4JdJ5P8FHgn7TqJSRYENYwAZIg60NQmi6OnGqDSElr30Aeghz7_aQ9mAqtb5c4aqxfiJSTuqbZQuwvtBDMifRCoS2WX9jgyc2W2hh7gFYGOn9xLKVvnns9q5xlg97QSYTmkpQW3DYe7QgQc7uKJe_6yQ-xG2Nw7F5k4yxsZiLJ9EA6vhmIL3OAuu9dbi9AxhYKlZ3yVhjncZajM2e3qdGoFFMnc8klBx191xqFyOEDpgX6c2YCmn_SJ-HcOmlo-v_1Uk5f7Mre4_-nK4BOlSHjmx7Ojur3ERpnLbWgQNJ09Sz6-uo58oBW-V8cIgwCes9fo97PBVzUQjBeoncZ2sa76sR_AQQfKOl2nnsQ2Ez6UI73r1S__A6cDRQhy4cFOIGg9P4FbUrx0UDJAoDswfD7h3w3tl6ASY2FB8ogyDrDEfnrh-XItzQL-VU21uuSiCaQYXTpetgXSAr-jifsTd4Xh5eJ2iiL3rCH21aJh_Gl_7pYfl2g6P82T0xdt-r2hXT6CFp5dvpBZGA1jQ1ZpoKwDN4J0n9NCBfnuZscn5Wopst3ABKF94NBMI-nV1bSye-zLOjNC0qUVQWreu8qr1yUy_FkKl6gKcVMGIv3G-rR1NNpD2LGyjln2PqDeviZFTxGCjfhDOjr1t75mGUAkgAk4iC5dYv-S1iCAB8rC1HeY0dT-IZltLljS5oTrBwsXIjyF2_syrnhyiD4srdX370mQoe5Jemoa2rlSKz13cvCJm0GWq2v5YOBzKwE_lVrz405r-x0oZYm58ZWioC4kQ=w1307-h980-s-no?authuser=0"
 	fmt.Fprintf(w, "<img src=\"%s\" />\n", imgSrc)
+}
+func pageSearch(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("Arcpics search results"))
+	fmt.Fprint(w, webMenu("/"))
+	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
+	query := fmt.Sprintf("v=%v", r)
+	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))
