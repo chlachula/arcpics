@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/boltdb/bolt"
@@ -239,6 +240,9 @@ func makeAndPopulateTempPicDir() (string, error) {
 
 func TestAbsRootPath(t *testing.T) {
 	want := "/tmp"
+	if runtime.GOOS == "windows" {
+		want = "C:\\tmp"
+	}
 	got := absRootPath("/tmp")
 	if want != got {
 		t.Errorf("error #1 - wantAbsDir: %s; gotAbsDir: %s", want, got)
@@ -251,29 +255,56 @@ func TestAbsRootPath(t *testing.T) {
 
 func TestRelPath(t *testing.T) {
 	want := "./"
-	got := relPath("/tmp", "/tmp")
+	got := ""
+
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp")
+	} else {
+		got = relPath("/tmp", "/tmp")
+	}
 	if want != got {
 		t.Errorf("error relPath #1a - want: %s; got: %s", want, got)
 	}
-	got = relPath("/tmp", "/tmp/")
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp\\")
+	} else {
+		got = relPath("/tmp", "/tmp/")
+	}
 	if want != got {
 		t.Errorf("error relPath #1b - want: %s; got: %s", want, got)
 	}
 
 	want = "abc"
-	got = relPath("/tmp", "/tmp/abc")
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp\\abc")
+	} else {
+		got = relPath("/tmp", "/tmp/abc")
+	}
 	if want != got {
 		t.Errorf("error relPath #2a - want: %s; got: %s", want, got)
 	}
-	got = relPath("/tmp", "/tmp/abc/")
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp\\abc\\")
+	} else {
+		got = relPath("/tmp", "/tmp/abc/")
+	}
 	if want != got {
 		t.Errorf("error relPath #2b - want: %s; got: %s", want, got)
 	}
-	got = relPath("/tmp", "/tmp/./abc")
+
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp\\.\\abc")
+	} else {
+		got = relPath("/tmp", "/tmp/./abc")
+	}
 	if want != got {
 		t.Errorf("error relPath #2c - want: %s; got: %s", want, got)
 	}
-	got = relPath("/tmp", "/tmp/./abc/")
+	if runtime.GOOS == "windows" {
+		got = relPath("C:\\tmp", "C:\\tmp\\.\\abc\\")
+	} else {
+		got = relPath("/tmp", "/tmp/./abc/")
+	}
 	if want != got {
 		t.Errorf("error relPath #2d - want: %s; got: %s", want, got)
 	}

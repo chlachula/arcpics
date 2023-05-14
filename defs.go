@@ -8,41 +8,46 @@ line:
 	delete    Windows/Ubuntu — Ctrl + Shift + K
 	move Windows/Ubuntu — Alt + Up/Down arrow
 */
-var Version string = "0.0.4"
-var defaultName = "arcpics"                              // arcpics
-var defaultNameDash = defaultName + "-"                  // arcpics-
-var defaultNameDashLabel = defaultNameDash + "label"     // arcpics-label
-var defaultNameDashLabelDot = defaultNameDashLabel + "." // arcpics-label.
-var dotDefaultName = "." + defaultName                   // .arcpics
-var defaultPicturesDirName = "Arc-Pics"
+const (
+	Version                 string = "0.0.4"
+	defaultName                    = "arcpics"                  // arcpics
+	defaultNameDash                = defaultName + "-"          // arcpics-
+	defaultNameDashLabel           = defaultNameDash + "label"  // arcpics-label
+	defaultNameDashLabelDot        = defaultNameDashLabel + "." // arcpics-label.
+	dotDefaultName                 = "." + defaultName          // .arcpics
+	defaultPicturesDirName         = "Arc-Pics"
 
-var SYSTEM_BUCKET = []byte("SYSTEM")
-var FILES_BUCKET = []byte("FILES")
+	INIT_LABEL_KEY    = "ARC-PICS-LABEL-KEY"
+	LABEL_SUMMARY_fmt = "LABEL-%s-SUMMARY"
 
-var INIT_LABEL_KEY = "ARC-PICS-LABEL-KEY"
-var LABEL_SUMMARY_fmt = "LABEL-%s-SUMMARY"
+	defaultNameJson             = defaultName + ".json"              // arcpics.json
+	defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
+	timeStampJsonFormat         = "2006-01-02_15:04:05.99"
 
-var LabelMounts LabelMountsType = make(map[string]string)
+	ErrSkippedByUser = "error - skipped by user"
+)
 
-var defaultNameJson = defaultName + ".json"                          // arcpics.json
-var defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
-var timeStampJsonFormat = "2006-01-02_15:04:05.99"
+var (
+	Verbose       bool            = false
+	SYSTEM_BUCKET                 = []byte("SYSTEM")
+	FILES_BUCKET                  = []byte("FILES")
+	LabelMounts   LabelMountsType = make(map[string]string)
+)
 
-var ErrSkippedByUser = "error - skipped by user"
-var Verbose bool = false
-
-// File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
-// and at least one character long arbitrary extension.
-// For example file "arcpics-db-label.a" has label value "a"
-// or "arcpics-db-label.my1TB_hard_drive" has label value "my1TB_hard_drive"
-//
-// ATTENTION!!
-// ArcpicsFS work fine with fs.WalkDir unless there are any file operations
-// Then use filepath.WalkDir(ArcpicsFS.Dir,...
-type ArcpicsFS struct {
-	Dir   string
-	Label string
-}
+type (
+	// File system ArcpicsFS has to have at root special label file with name "arcpics-db-label"
+	// and at least one character long arbitrary extension.
+	// For example file "arcpics-db-label.a" has label value "a"
+	// or "arcpics-db-label.my1TB_hard_drive" has label value "my1TB_hard_drive"
+	//
+	// ATTENTION!!
+	// ArcpicsFS work fine with fs.WalkDir unless there are any file operations
+	// Then use filepath.WalkDir(ArcpicsFS.Dir,...
+	ArcpicsFS struct {
+		Dir   string
+		Label string
+	}
+)
 
 type JfileType = struct {
 	Name      string
@@ -65,7 +70,7 @@ type JdirType = struct {
 }
 type LabelMountsType map[string]string
 
-var HelpTextFmt = `=== arcpics: manage archived of pictures not only at external hard drives ===
+const HelpTextFmt = `=== arcpics: manage archived of pictures not only at external hard drives ===
 ver %s
 Usage arguments:
  -h help text

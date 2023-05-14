@@ -120,7 +120,9 @@ func main() {
 			arcpics.ArcpicsWordFrequency(db)
 		case "-m":
 			i = increaseAndCheckArgumentIndex(i, "No dir to mount after -m")
-			arcpics.MountLabeledDirectory(os.Args[i])
+			if err := arcpics.MountLabeledDirectory(os.Args[i]); err != nil {
+				fmt.Println(err.Error())
+			}
 		case "-p":
 			i = increaseAndCheckArgumentIndex(i, "No port after -p")
 			p, err := strconv.Atoi(os.Args[i])
