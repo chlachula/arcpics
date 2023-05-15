@@ -16,7 +16,8 @@ var mutex = &sync.Mutex{}
 
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
-var reSearch = regexp.MustCompile(`(?m)\/search[\/]{0,1}$`)
+var reSearchStr = `(?m)\/search[\/]{0,1}(?P<Query>.*)$`
+var reSearch = regexp.MustCompile(reSearchStr)
 var reLabels = regexp.MustCompile(`(?m)^\/labels[\/]{0,1}$`)
 var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
 var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
@@ -150,7 +151,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics search results"))
 	fmt.Fprint(w, webMenu("/"))
 	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
-	query := fmt.Sprintf("v=%v", r)
+	query := r.URL.Query().Get("search")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {

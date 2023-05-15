@@ -138,10 +138,19 @@ func jDirIsEqual(a, b JdirType) bool {
 	if a.Description != b.Description {
 		return false
 	}
-	if a.MostComment != b.MostComment {
+	if a.MostAuthor != b.MostAuthor {
 		return false
 	}
-	if a.Location != b.Location {
+	if a.MostLocation != b.MostLocation {
+		return false
+	}
+	if a.MostLocation != b.MostLocation {
+		return false
+	}
+	if a.MostKeywords != b.MostKeywords {
+		return false
+	}
+	if a.MostComment != b.MostComment {
 		return false
 	}
 	if len(a.Files) != len(b.Files) {
@@ -326,19 +335,38 @@ func isJpegFile(fileName string) bool {
 	n := strings.ToLower(fileName)
 	return strings.HasSuffix(n, "jpg") || strings.HasSuffix(n, "jpeg")
 }
+func mostOccurringString(counter map[string]int) (string, string) {
+	vMax := 0
+	kMax := ""
+	sum := 0
+	for k, v := range counter {
+		sum += v
+		if v > vMax {
+			vMax = v
+			kMax = k
+		}
+	}
+	return kMax, fmt.Sprintf("%d/%d", vMax, sum)
+}
 func makeJdir(dir string) (JdirType, error) {
 	var jd JdirType
 	var userData JdirType
 	var err error
 	jd.Files = make([]JfileType, 0)
 	jd.Description = "here could be a description from file " + defaultNameDashUserDataJson
-	jd.Location = "here could be a description from file " + defaultNameDashUserDataJson
+	jd.Author = "...author from " + defaultNameDashUserDataJson
+	jd.Location = "...location from " + defaultNameDashUserDataJson
+	jd.Keywords = "...keywords from " + defaultNameDashUserDataJson
+	jd.Comment = "...comment from " + defaultNameDashUserDataJson
 	userFile := filepath.Join(dir, defaultNameDashUserDataJson)
 	if FileExists(userFile) {
 		userData, err = readJsonDirData(userFile)
 		if err == nil {
 			jd.Description = userData.Description
+			jd.Author = userData.Author
 			jd.Location = userData.Location
+			jd.Keywords = userData.Keywords
+			jd.Comment = userData.Comment
 		} else {
 			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
 		}
@@ -348,8 +376,11 @@ func makeJdir(dir string) (JdirType, error) {
 	if files, err = filesInDir(dir); err != nil {
 		return jd, err
 	}
-	// find most occuring comment
-	counter := map[string]int{}
+	// find most occuring author, location, keywords, comment
+	authorCounter := map[string]int{}
+	locationCounter := map[string]int{}
+	keywordsCounter := map[string]int{}
+	commentCounter := map[string]int{}
 	for _, f := range files {
 		info, _ := f.Info()
 		var file JfileType
@@ -360,7 +391,10 @@ func makeJdir(dir string) (JdirType, error) {
 			if isJpegFile(file.Name) {
 				updateByJpegValues(&file, filepath.Join(dir, file.Name))
 			}
-			counter[file.Comment]++
+			authorCounter[file.Author]++
+			locationCounter[file.Location]++
+			keywordsCounter[file.Keywords]++
+			commentCounter[file.Comment]++
 			jd.Files = append(jd.Files, file)
 		}
 	}
@@ -374,18 +408,10 @@ func makeJdir(dir string) (JdirType, error) {
 			jd.Dirs = append(jd.Dirs, d)
 		}
 	}
-
-	vMax := 0
-	kMax := ""
-	for k, v := range counter {
-		if v > vMax {
-			vMax = v
-			kMax = k
-		}
-	}
-	if kMax != "" {
-		jd.MostComment = fmt.Sprintf("%s: %d/%d", kMax, vMax, len(jd.Files))
-	}
+	jd.MostAuthor, _ = mostOccurringString(authorCounter)
+	jd.MostLocation, _ = mostOccurringString(locationCounter)
+	jd.MostKeywords, _ = mostOccurringString(keywordsCounter)
+	jd.MostComment, _ = mostOccurringString(commentCounter)
 	return jd, nil
 }
 

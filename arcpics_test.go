@@ -421,5 +421,43 @@ func TestLastDir(t *testing.T) {
 	if want != got {
 		t.Errorf("2. error %s - want: %s; got: %s", fn, want, got)
 	}
+}
 
+// go test -run TestMostOccuringString
+func TestMostOccuringString(t *testing.T) {
+	fn := "mostOccuringString"
+
+	strCounter := map[string]int{}
+	want := ""
+	wantRate := "0/0"
+	got, gotRate := mostOccurringString(strCounter)
+	if want != got {
+		t.Errorf("1a. error %s - want: %s; got: %s", fn, want, got)
+	}
+	if wantRate != gotRate {
+		t.Errorf("1b. error %s - want: %s; got: %s", fn, wantRate, gotRate)
+	}
+
+	strCounter["hello"]++
+	want = "hello"
+	wantRate = "1/1"
+	got, gotRate = mostOccurringString(strCounter)
+	if want != got {
+		t.Errorf("2a. error %s - want: %s; got: %s", fn, want, got)
+	}
+	if wantRate != gotRate {
+		t.Errorf("2b. error %s - want: %s; got: %s", fn, wantRate, gotRate)
+	}
+
+	strCounter["world"]++
+	strCounter["world"]++
+	want = "world"
+	wantRate = "2/3"
+	got, gotRate = mostOccurringString(strCounter)
+	if want != got {
+		t.Errorf("3a. error %s - want: %s; got: %s", fn, want, got)
+	}
+	if wantRate != gotRate {
+		t.Errorf("3b. error %s - want: %s; got: %s", fn, wantRate, gotRate)
+	}
 }

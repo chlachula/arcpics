@@ -61,12 +61,18 @@ type JfileType = struct {
 	ThumbSrc  string `json:",omitempty"`
 }
 type JdirType = struct {
-	Description string      `json:",omitempty"`
-	MostComment string      `json:",omitempty"`
-	Location    string      `json:",omitempty"`
-	Skip        []string    `json:",omitempty"`
-	Files       []JfileType `json:",omitempty"`
-	Dirs        []string    `json:",omitempty"`
+	Description  string      `json:",omitempty"`
+	Author       string      `json:",omitempty"`
+	Location     string      `json:",omitempty"`
+	Keywords     string      `json:",omitempty"`
+	Comment      string      `json:",omitempty"`
+	MostAuthor   string      `json:",omitempty"`
+	MostLocation string      `json:",omitempty"`
+	MostKeywords string      `json:",omitempty"`
+	MostComment  string      `json:",omitempty"`
+	Skip         []string    `json:",omitempty"`
+	Files        []JfileType `json:",omitempty"`
+	Dirs         []string    `json:",omitempty"`
 }
 type LabelMountsType map[string]string
 
