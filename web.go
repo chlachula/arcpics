@@ -139,7 +139,9 @@ func webMenu(link string) string {
 	s += "\n<hr/>\n"
 	return s
 }
-
+func occurencies(w http.ResponseWriter, name string, m map[string]int) {
+	fmt.Fprintf(w, "\n<h2>%s</h2>%v<br/>\n", name, m)
+}
 func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics home"))
 	fmt.Fprint(w, webMenu("/"))
@@ -153,6 +155,17 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
 	query := r.URL.Query().Get("search")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
+
+	label := "D01"
+	db, err := LabeledDatabase(label)
+	if err == nil {
+		a, l, k, c := ArcpicsMostOcurrenceStrings(db)
+		occurencies(w, "Author", a)
+		occurencies(w, "Location", l)
+		occurencies(w, "Keywords", k)
+		occurencies(w, "Comment", c)
+	}
+	defer db.Close()
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))

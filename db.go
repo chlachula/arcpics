@@ -220,6 +220,30 @@ func ArcpicsAllKeys(db *bolt.DB) []string {
 	})
 	return keys
 }
+func ArcpicsMostOcurrenceStrings(db *bolt.DB) (map[string]int, map[string]int, map[string]int, map[string]int) {
+	//keys := make([]string, 0)
+	mostAuthor := make(map[string]int)
+	mostLocation := make(map[string]int)
+	mostKeywords := make(map[string]int)
+	mostComment := make(map[string]int)
+	db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket(FILES_BUCKET)
+		c := b.Cursor()
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			//fmt.Printf("key=%s, value=%s\n", k, v)
+			var jd JdirType
+			json.Unmarshal(v, &jd)
+			mostAuthor[jd.MostAuthor]++
+			mostLocation[jd.MostLocation]++
+			mostKeywords[jd.MostKeywords]++
+			mostComment[jd.MostComment]++
+			//keys = append(keys, string(k))
+		}
+		return nil
+	})
+	return mostAuthor, mostLocation, mostKeywords, mostComment
+}
 func ArcpicsWordFrequency(db *bolt.DB) {
 	counter := map[string]int{}
 	db.View(func(tx *bolt.Tx) error {
