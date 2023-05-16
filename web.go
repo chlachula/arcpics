@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 )
@@ -81,7 +82,15 @@ func pageBeginning(title string) string {
 </style>
 <script>
 var globalLabel = "GlobalLabelNotSet"
-function toggleHideDisplay(myDIV) {
+  function clearSearchInput() {
+	var x = document.getElementById("search");
+	x.value = "";
+  }
+  function addToSearchInput(text) {
+	var x = document.getElementById("search");
+	x.value += text;
+  }
+  function toggleHideDisplay(myDIV) {
 	var x = document.getElementById(myDIV);
 	if (x.style.display === "none") {
 	  x.style.display = "block";
@@ -110,6 +119,7 @@ function toggleHideDisplay(myDIV) {
 func webSearch() string {
 	s := `&nbsp; <form action="/search" method="get" style="display: inline;">
 	<span>
+	    <button onclick="clearSearchInput()">clear</button>
 		<input type="text" id="search" name="search" value="" size="100" />
 		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
 	</span>
@@ -140,7 +150,29 @@ func webMenu(link string) string {
 	return s
 }
 func occurencies(w http.ResponseWriter, name string, m map[string]int) {
-	fmt.Fprintf(w, "\n<h2>%s</h2>%v<br/>\n", name, m)
+	nameColon := strings.ToUpper(name) + ":"
+	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
+	for _, k := range aMapKeysSortedByFreguency(m) {
+		n := m[k]
+		apostrofedK := k
+		if strings.Contains(k, " ") {
+			apostrofedK = "\\'" + k + "\\'"
+		}
+		fmt.Fprintf(w, " <button onclick=\"addToSearchInput('%s')\">%s</button>:%d ", apostrofedK, k, n)
+	}
+	fmt.Fprint(w, "\n<br/><br/>\n")
+}
+func aMapKeysSortedByFreguency(wordsCount map[string]int) []string {
+	keys := make([]string, 0, len(wordsCount))
+
+	for key := range wordsCount {
+		keys = append(keys, key)
+	}
+
+	sort.Slice(keys, func(i, j int) bool {
+		return wordsCount[keys[i]] > wordsCount[keys[j]]
+	})
+	return keys
 }
 func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics home"))

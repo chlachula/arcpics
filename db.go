@@ -220,8 +220,14 @@ func ArcpicsAllKeys(db *bolt.DB) []string {
 	})
 	return keys
 }
+func getCsvKeywords(s string) []string {
+	arr := strings.Split(s, ",")
+	for i, a := range arr {
+		arr[i] = strings.TrimSpace(a)
+	}
+	return arr
+}
 func ArcpicsMostOcurrenceStrings(db *bolt.DB) (map[string]int, map[string]int, map[string]int, map[string]int) {
-	//keys := make([]string, 0)
 	mostAuthor := make(map[string]int)
 	mostLocation := make(map[string]int)
 	mostKeywords := make(map[string]int)
@@ -231,14 +237,15 @@ func ArcpicsMostOcurrenceStrings(db *bolt.DB) (map[string]int, map[string]int, m
 		b := tx.Bucket(FILES_BUCKET)
 		c := b.Cursor()
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			//fmt.Printf("key=%s, value=%s\n", k, v)
 			var jd JdirType
 			json.Unmarshal(v, &jd)
 			mostAuthor[jd.MostAuthor]++
 			mostLocation[jd.MostLocation]++
-			mostKeywords[jd.MostKeywords]++
+			for _, k := range getCsvKeywords(jd.MostKeywords) {
+				mostKeywords[k]++
+			}
 			mostComment[jd.MostComment]++
-			//keys = append(keys, string(k))
+			_ = k
 		}
 		return nil
 	})
