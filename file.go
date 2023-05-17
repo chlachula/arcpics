@@ -584,3 +584,39 @@ func CmdHelp(msg string) string {
 	s = s + fmt.Sprintf(HelpTextFmt, Version, r, r, r, r, r, h)
 	return s
 }
+func extractDir(path string) (string, string) {
+	i := strings.Index(path, "/")
+	return path[:i], path[i+1:]
+}
+func makeNodes(arr []string) []Node {
+	nodes := make([]Node, 0)
+	prevdir := ""
+	arr2 := make([]string, 0)
+	for _, f := range arr {
+		if !strings.Contains(f, "/") {
+			var node Node
+			node.Name = f
+			nodes = append(nodes, node)
+		} else {
+			dir, f2 := extractDir(f)
+			if prevdir != dir {
+				if prevdir != "" {
+					var node Node
+					node.Name = prevdir
+					node.Nodes = makeNodes(arr2)
+					nodes = append(nodes, node)
+					arr2 = make([]string, 0)
+				}
+			}
+			arr2 = append(arr2, f2)
+			prevdir = dir
+		}
+	}
+	if len(arr2) > 0 {
+		var node Node
+		node.Name = prevdir
+		node.Nodes = makeNodes(arr2)
+		nodes = append(nodes, node)
+	}
+	return nodes
+}

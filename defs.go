@@ -76,6 +76,11 @@ type JdirType = struct {
 }
 type LabelMountsType map[string]string
 
+type Node struct {
+	Name  string
+	Nodes []Node
+}
+
 const HelpTextFmt = `=== arcpics: manage archived of pictures not only at external hard drives ===
 ver %s
 Usage arguments:

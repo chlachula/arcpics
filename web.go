@@ -94,7 +94,7 @@ var globalLabel = "GlobalLabelNotSet"
 	var x = document.getElementById(myDIV);
 	if (x.style.display === "none") {
 	  x.style.display = "block";
-	} else {
+    } else {
 	  x.style.display = "none";
 	}
   }
@@ -133,6 +133,7 @@ func webMenu(link string) string {
 	}{
 		{"/", "Home"},
 		{"/labels", "Labels"},
+		{"/search", "Search"},
 		{"/about", "About"},
 	}
 	s := ""
@@ -149,7 +150,26 @@ func webMenu(link string) string {
 	s += "\n<hr/>\n"
 	return s
 }
-func occurencies(w http.ResponseWriter, name string, m map[string]int) {
+func occurenciesArr(w http.ResponseWriter, name string) {
+	nameColon := strings.ToUpper(name) + ":"
+	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
+	dbDir := GetDatabaseDirName()
+	labels, err := GetLabelsInDbDir(dbDir)
+	if err != nil {
+		fmt.Fprint(w, " %s<br/>\n", err.Error())
+		return
+	}
+	if len(labels) < 1 {
+		fmt.Fprint(w, " No labels<br/>\n")
+		return
+	} else {
+		for _, k := range labels {
+			fmt.Fprintf(w, " <button onclick=\"addToSearchInput('%s')\">%s</button> ", k, k)
+		}
+	}
+	fmt.Fprint(w, "\n<br/><br/>\n")
+}
+func occurenciesMap(w http.ResponseWriter, name string, m map[string]int) {
 	nameColon := strings.ToUpper(name) + ":"
 	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
 	for _, k := range aMapKeysSortedByFreguency(m) {
@@ -189,13 +209,14 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
 	label := "D01"
+	occurenciesArr(w, "Labels")
 	db, err := LabeledDatabase(label)
 	if err == nil {
 		a, l, k, c := ArcpicsMostOcurrenceStrings(db)
-		occurencies(w, "Author", a)
-		occurencies(w, "Location", l)
-		occurencies(w, "Keywords", k)
-		occurencies(w, "Comment", c)
+		occurenciesMap(w, "Author", a)
+		occurenciesMap(w, "Location", l)
+		occurenciesMap(w, "Keywords", k)
+		occurenciesMap(w, "Comment", c)
 	}
 	defer db.Close()
 }
@@ -277,6 +298,8 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, webMenu(""))
 	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
 	fmt.Fprintf(w, lblfmt, label)
+	nodes := makeNodes(keys)
+	fmt.Fprintf(w, "<br/> %v<br/>\n", nodes)
 	for _, k := range keys {
 		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
 		fmt.Fprintf(w, "<br/> %s\n", link)
