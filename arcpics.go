@@ -75,13 +75,14 @@ func insertSystemLabelValue(db *bolt.DB, value string) error {
 	})
 	return err
 }
-func insertSystemLabelSummary(db *bolt.DB, label, value string) error {
-	key := fmt.Sprintf(LABEL_SUMMARY_fmt, label)
-	keyBytes := []byte(key)
+func insert2System_KeyValueStrings(db *bolt.DB, key, value string) error {
+	return insert2System_KeyValue(db, []byte(key), []byte(value))
+}
+func insert2System_KeyValue(db *bolt.DB, keyBytes, valueBytes []byte) error {
 	err := db.Update(func(tx *bolt.Tx) error {
-		err := tx.Bucket([]byte(SYSTEM_BUCKET)).Put(keyBytes, []byte(value))
+		err := tx.Bucket([]byte(SYSTEM_BUCKET)).Put(keyBytes, valueBytes)
 		if err != nil {
-			return fmt.Errorf("bucket %s - Could not insert entry: %v", SYSTEM_BUCKET, err)
+			return fmt.Errorf("bucket:%s, key:%s - Could not insert value:%v", SYSTEM_BUCKET, string(keyBytes), err)
 		}
 		return nil
 	})

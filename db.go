@@ -65,8 +65,24 @@ func ByteCountIEC(b int64) string {
 
 func insertLabelSummary(db *bolt.DB, label string, countDir int, countFiles int, countJpegs int, totalSize int, duration time.Duration) {
 	s := ByteCountIEC(int64(totalSize))
-	sum := fmt.Sprintf("directories:%5d, files:%7d, jpegs:%6d, total size:%10s, elapsed time: %s", countDir, countFiles, countJpegs, s, duration)
-	insertSystemLabelSummary(db, label, sum)
+	sum := fmt.Sprintf("directories:%5d, files:%7d, jpegs:%6d, total size:%10s, elapsed time: %s on %s", countDir, countFiles, countJpegs, s, duration, time.Now())
+	key := fmt.Sprintf(LABEL_SUMMARY_fmt, label)
+	insert2System_KeyValueStrings(db, key, sum)
+}
+func insertFrequencyWords(db *bolt.DB, label string, m map[string]FrequencyCounterType) {
+	if bytes, err := json.Marshal(m); err != nil {
+		insert2System_KeyValue(db, []byte(LABEL_FREQUENCY_WORDS), bytes)
+	} else {
+		fmt.Printf("error label %s insertFrequencyWords: %s\n", label, err.Error())
+	}
+}
+func initFrequencyCounter() map[string]FrequencyCounterType {
+	m := make(map[string]FrequencyCounterType)
+	m["author"] = make(map[string]int)
+	m["location"] = make(map[string]int)
+	m["keywords"] = make(map[string]int)
+	m["comment"] = make(map[string]int)
+	return m
 }
 
 // Writting the directory tree json files to database
@@ -86,6 +102,7 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 	countCreate := 0
 	countUpdate := 0
 	changedDirs := make([]string, 0)
+	m := initFrequencyCounter()
 	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			println(err.Error(), "fs.SkipDir", path)
@@ -98,14 +115,21 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 			}
 
 			countDir++
-			var jDir JdirType
+			var jd JdirType
 			jDirTimeStart := time.Now()
 
-			if jDir, err = makeJdir(path); err != nil {
+			if jd, err = makeJdir(path); err != nil {
 				return err
 			}
-			countFiles += len(jDir.Files)
-			for _, f := range jDir.Files {
+			m["author"][jd.MostAuthor]++
+			m["location"][jd.MostLocation]++
+			for _, k := range getCsvKeywords(jd.MostKeywords) {
+				m["keywords"][k]++
+			}
+			m["comment"][jd.MostComment]++
+
+			countFiles += len(jd.Files)
+			for _, f := range jd.Files {
 				size, _ := strconv.Atoi(f.Size)
 				totalSize += size
 				if isJpegFile(f.Name) {
@@ -114,11 +138,11 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 			}
 			verbose := true
 			if verbose {
-				fmt.Printf("\r%4dd %4df %4s %s  ", countDir, len(jDir.Files), time.Since(jDirTimeStart).Truncate(time.Second), path)
+				fmt.Printf("\r%4dd %4df %4s %s  ", countDir, len(jd.Files), time.Since(jDirTimeStart).Truncate(time.Second), path)
 			}
 			changedDirs = append(changedDirs, path)
 			countCreate++
-			bytes, err := json.Marshal(jDir)
+			bytes, err := json.Marshal(jd)
 			if err != nil {
 				return err
 			}
@@ -147,6 +171,7 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 		fmt.Printf("ArcpicsFiles2DB: directories: %d, new: %d, updated: %d, elapsed time: %s\n", countDir, countCreate, countUpdate, time.Since(startTime))
 	}
 	insertLabelSummary(db, arcFS.Label, countDir, countFiles, countJpegs, totalSize, time.Since(startTime))
+	insertFrequencyWords(db, arcFS.Label, m)
 	return nil
 }
 
@@ -161,6 +186,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 	}
 	startTime := time.Now()
 	countDir := 0
+	m := initFrequencyCounter()
 
 	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -176,6 +202,15 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 				fmt.Printf("Error reading file %s - %s \n", fjson, err.Error())
 				return err
 			}
+			var jd JdirType
+			json.Unmarshal(bytes, &jd)
+			m["author"][jd.MostAuthor]++
+			m["location"][jd.MostLocation]++
+			for _, k := range getCsvKeywords(jd.MostKeywords) {
+				m["keywords"][k]++
+			}
+			m["comment"][jd.MostComment]++
+
 			db.Update(func(tx *bolt.Tx) error {
 				b := tx.Bucket(FILES_BUCKET)
 				rp := relPath(rootDir, path)
@@ -198,15 +233,15 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 		fmt.Printf("ArcpicsDatabaseUpdate: %d files %s found, elapsed time: %s\n", countDir, defaultNameJson, time.Since(startTime))
 	}
 	insertLabelSummary(db, arcFS.Label, countDir, -1, -2, -3, time.Since(startTime))
-
+	insertFrequencyWords(db, LABEL_FREQUENCY_WORDS, m)
 	return nil
 }
 
-func ArcpicsAllKeys(db *bolt.DB) []string {
+func ArcpicsAllKeys(db *bolt.DB, bucket []byte) []string {
 	keys := make([]string, 0)
 	db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
-		b := tx.Bucket(FILES_BUCKET)
+		b := tx.Bucket(bucket)
 
 		c := b.Cursor()
 
@@ -227,29 +262,18 @@ func getCsvKeywords(s string) []string {
 	}
 	return arr
 }
-func ArcpicsMostOcurrenceStrings(db *bolt.DB) (map[string]int, map[string]int, map[string]int, map[string]int) {
-	mostAuthor := make(map[string]int)
-	mostLocation := make(map[string]int)
-	mostKeywords := make(map[string]int)
-	mostComment := make(map[string]int)
+func ArcpicsMostOcurrenceStrings(db *bolt.DB) map[string]FrequencyCounterType {
+
+	var bytes []byte
+	var m map[string]FrequencyCounterType
 	db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
-		b := tx.Bucket(FILES_BUCKET)
-		c := b.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			var jd JdirType
-			json.Unmarshal(v, &jd)
-			mostAuthor[jd.MostAuthor]++
-			mostLocation[jd.MostLocation]++
-			for _, k := range getCsvKeywords(jd.MostKeywords) {
-				mostKeywords[k]++
-			}
-			mostComment[jd.MostComment]++
-			_ = k
-		}
+		b := tx.Bucket(SYSTEM_BUCKET)
+		bytes = b.Get([]byte(LABEL_FREQUENCY_WORDS))
 		return nil
 	})
-	return mostAuthor, mostLocation, mostKeywords, mostComment
+	json.Unmarshal(bytes, &m)
+	return m
 }
 func ArcpicsWordFrequency(db *bolt.DB) {
 	counter := map[string]int{}

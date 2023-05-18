@@ -156,7 +156,7 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 	dbDir := GetDatabaseDirName()
 	labels, err := GetLabelsInDbDir(dbDir)
 	if err != nil {
-		fmt.Fprint(w, " %s<br/>\n", err.Error())
+		fmt.Fprintf(w, " %s<br/>\n", err.Error())
 		return
 	}
 	if len(labels) < 1 {
@@ -212,11 +212,11 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	occurenciesArr(w, "Labels")
 	db, err := LabeledDatabase(label)
 	if err == nil {
-		a, l, k, c := ArcpicsMostOcurrenceStrings(db)
-		occurenciesMap(w, "Author", a)
-		occurenciesMap(w, "Location", l)
-		occurenciesMap(w, "Keywords", k)
-		occurenciesMap(w, "Comment", c)
+		m := ArcpicsMostOcurrenceStrings(db)
+		occurenciesMap(w, "Author", m["author"])
+		occurenciesMap(w, "Location", m["location"])
+		occurenciesMap(w, "Keywords", m["keywords"])
+		occurenciesMap(w, "Comment", m["comment"])
 	}
 	defer db.Close()
 }
@@ -291,7 +291,8 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	var keys []string
 	db, err := LabeledDatabase(label)
 	if err == nil {
-		keys = ArcpicsAllKeys(db)
+		//keys = ArcpicsAllKeys(db, FILES_BUCKET)
+		keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
 	}
 	defer db.Close()
 	fmt.Fprint(w, pageBeginning("Arcpics Label "+label+" list"))

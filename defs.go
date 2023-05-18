@@ -17,8 +17,9 @@ const (
 	dotDefaultName                 = "." + defaultName          // .arcpics
 	defaultPicturesDirName         = "Arc-Pics"
 
-	INIT_LABEL_KEY    = "ARC-PICS-LABEL-KEY"
-	LABEL_SUMMARY_fmt = "LABEL-%s-SUMMARY"
+	INIT_LABEL_KEY        = "ARC-PICS-LABEL-KEY"
+	LABEL_SUMMARY_fmt     = "LABEL-%s-SUMMARY"
+	LABEL_FREQUENCY_WORDS = "LabelFrequencyWords"
 
 	defaultNameJson             = defaultName + ".json"              // arcpics.json
 	defaultNameDashUserDataJson = defaultNameDash + "user-data.json" // arcpics-user-data.json
@@ -74,6 +75,7 @@ type JdirType = struct {
 	Files        []JfileType `json:",omitempty"`
 	Dirs         []string    `json:",omitempty"`
 }
+type FrequencyCounterType map[string]int
 type LabelMountsType map[string]string
 
 type Node struct {

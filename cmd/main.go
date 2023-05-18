@@ -97,7 +97,7 @@ func main() {
 			i = increaseAndCheckArgumentIndex(i, "No label after -a")
 			db, err := arcpics.LabeledDatabase(os.Args[i])
 			exitIfErrorNotNil(err)
-			keys := arcpics.ArcpicsAllKeys(db)
+			keys := arcpics.ArcpicsAllKeys(db, arcpics.FILES_BUCKET)
 			for _, k := range keys {
 				fmt.Println(k)
 			}
