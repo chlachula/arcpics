@@ -103,6 +103,7 @@ Usage arguments:
 
 Examples:
 -c %sArc-Pics Vacation-2023 #creates label file inside of directory %sArc-Pics
+-a1 %sArc-Pics               #populates  %sVacation-2023.db by data in subdirs at %sArc-Pics
 -af %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
 -ab %sArc-Pics               #updates database %sVacation-2023.db
 `
