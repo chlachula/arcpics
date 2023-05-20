@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -36,6 +37,7 @@ func find(root, ext string) []string {
 func createFileFromBytes(fname string, data []byte) {
 	// create and open a file
 	f, err := os.Create(fname)
+	println("createFileFromBytes fname", fname)
 	if err != nil {
 		panic(err)
 	}
@@ -44,11 +46,18 @@ func createFileFromBytes(fname string, data []byte) {
 		panic(err)
 	}
 }
-func thumbnailName(fname string) string {
+func thumbnailName(fname string, new bool) string {
 	separator := "/"
+	if runtime.GOOS == "windows" {
+		separator = "\\"
+	}
 	s := strings.Split(fname, separator)
 	size := len(s)
-	s[size-1] = ThumbnailPrefix + s[size-1]
+	fn := ThumbnailPrefix
+	if new {
+		fn += "N-"
+	}
+	s[size-1] = fn + s[size-1]
 	fname2 := ""
 	sep := ""
 	for _, a := range s {
@@ -56,6 +65,10 @@ func thumbnailName(fname string) string {
 		sep = separator
 	}
 	return fname2
+}
+func generateThumbnail(filename, tname string) []byte {
+	bytes := jpeg.GenerateThumbnailWithWidth(filename, 160)
+	return bytes
 }
 
 var helpText = `=== jpegshow: display jpeg comments, size and create extracted thumbnails ===
@@ -131,12 +144,15 @@ func main() {
 		fmt.Printf("\n%s %dx%d %s\n", j.Filename, j.ImageWidth, j.ImageHeight, j.Comment)
 		if createThumbnails {
 			if len(j.Thumbnail) > 0 {
-				tname := thumbnailName(j.Filename)
+				tname := thumbnailName(j.Filename, false)
 				createFileFromBytes(tname, j.Thumbnail)
 				fmt.Printf("Created %s\n", tname)
 			} else {
 				fmt.Printf("INFO: no thumbnail for %s\n", j.Filename)
 				infoCount++
+				tname := thumbnailName(j.Filename, true)
+				bytes := generateThumbnail(j.Filename, tname)
+				createFileFromBytes(tname, bytes)
 			}
 		}
 	}

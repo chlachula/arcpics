@@ -3,9 +3,13 @@ package jpeg
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	jpg "image/jpeg"
 	"os"
+
+	"github.com/nfnt/resize"
 )
 
 /*
@@ -208,7 +212,7 @@ func (j *JpegReader) PrintMarkExif(markName string, m byte) {
 	}
 	if size > 0 {
 		j.Thumbnail = data[start:end]
-		j.ThumbSrc = "Exif"
+		j.ThumbSrc += "Exif"
 	}
 
 }
@@ -349,6 +353,28 @@ func (j *JpegReader) Decode() error {
 		fmt.Printf("\n%06x KON %02x KON-EC SMYCKY scan=%t\n", j.charCounter, cff, scan)
 	}
 	return nil
+}
+
+func (j *JpegReader) GenerateThumbnail() {
+	bytes := GenerateThumbnailWithWidth(j.Filename, 160)
+	j.Thumbnail = bytes
+	j.ThumbSrc += "Gen"
+}
+func GenerateThumbnailWithWidth(filename string, width uint) []byte {
+	buff := new(bytes.Buffer)
+	f, err := os.Open(filename)
+	if err != nil {
+		fmt.Printf("error openning file %s: %s\n", filename, err.Error())
+	}
+	defer f.Close()
+	img, err := jpg.Decode(f)
+	if err != nil {
+		fmt.Printf("error decoding jpeg file %s: %s\n", filename, err.Error())
+		return buff.Bytes()
+	}
+	newImage := resize.Resize(width, 0, img, resize.Lanczos3)
+	jpg.Encode(buff, newImage, nil)
+	return buff.Bytes()
 }
 
 /* 2023-0412
