@@ -64,8 +64,9 @@ func ByteCountIEC(b int64) string {
 }
 
 func insertLabelSummary(db *bolt.DB, label string, countDir int, countFiles int, countJpegs int, totalSize int, duration time.Duration) {
-	s := ByteCountIEC(int64(totalSize))
-	sum := fmt.Sprintf("directories:%5d, files:%7d, jpegs:%6d, total size:%10s, elapsed time: %s on %s", countDir, countFiles, countJpegs, s, duration, time.Now())
+	total := ByteCountIEC(int64(totalSize))
+	FORMAT := "directories:%5d, files:%7d, jpegs:%6d, total size:%10s, elapsed time: %-15s on %s"
+	sum := fmt.Sprintf(FORMAT, countDir, countFiles, countJpegs, total, duration, time.Now().Format("2006-01-02_15:04"))
 	key := fmt.Sprintf(LABEL_SUMMARY_fmt, label)
 	insert2System_KeyValueStrings(db, key, sum)
 }
