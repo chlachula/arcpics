@@ -70,7 +70,8 @@ func insertLabelSummary(db *bolt.DB, label string, countDir int, countFiles int,
 	insert2System_KeyValueStrings(db, key, sum)
 }
 func insertFrequencyWords(db *bolt.DB, label string, m map[string]FrequencyCounterType) {
-	if bytes, err := json.Marshal(m); err != nil {
+	bytes, err := json.Marshal(m)
+	if err == nil {
 		insert2System_KeyValue(db, []byte(LABEL_FREQUENCY_WORDS), bytes)
 	} else {
 		fmt.Printf("error label %s insertFrequencyWords: %s\n", label, err.Error())

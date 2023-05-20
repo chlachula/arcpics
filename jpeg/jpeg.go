@@ -212,7 +212,7 @@ func (j *JpegReader) PrintMarkExif(markName string, m byte) {
 	}
 	if size > 0 {
 		j.Thumbnail = data[start:end]
-		j.ThumbSrc += "Exif"
+		j.ThumbSrc += "Exif."
 	}
 
 }
@@ -352,13 +352,16 @@ func (j *JpegReader) Decode() error {
 	if j.verbose {
 		fmt.Printf("\n%06x KON %02x KON-EC SMYCKY scan=%t\n", j.charCounter, cff, scan)
 	}
+	if len(j.Thumbnail) <= 0 {
+		j.GenerateThumbnail()
+	}
 	return nil
 }
 
 func (j *JpegReader) GenerateThumbnail() {
 	bytes := GenerateThumbnailWithWidth(j.Filename, 160)
 	j.Thumbnail = bytes
-	j.ThumbSrc += "Gen"
+	j.ThumbSrc += "Gen."
 }
 func GenerateThumbnailWithWidth(filename string, width uint) []byte {
 	buff := new(bytes.Buffer)
