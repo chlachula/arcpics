@@ -166,6 +166,12 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 		for _, k := range labels {
 			fmt.Fprintf(w, " <button onclick=\"addToSearchInput('%s')\">%s</button> ", k, k)
 		}
+		fmt.Fprint(w, "\n<br/>\n<form action=\"./\" >")
+		for _, k := range labels {
+			fmt.Fprintf(w, ` <input type="radio" id="%s" name="select_label" value="%s">%s `, k, k, k)
+		}
+		fmt.Fprint(w, "\n</form>\n")
+
 	}
 	fmt.Fprint(w, "\n<br/><br/>\n")
 }
