@@ -26,6 +26,8 @@ var reLabelFileJpegStr = `(?m)\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)
 var reLabelFileJpeg = regexp.MustCompile(reLabelFileJpegStr)
 var reImageFileStr = `(?m)^\/image(?P<Fname>\/.+)$`
 var reImageFile = regexp.MustCompile(reImageFileStr)
+var reSearchLabelsStr = `(?m).*LABELS:(?P<Labels>[\w,]+)`
+var reSearchLabels = regexp.MustCompile(reSearchLabelsStr)
 
 /**
  * Parses url with the given regular expression and returns the
@@ -200,6 +202,10 @@ func aMapKeysSortedByFreguency(wordsCount map[string]int) []string {
 	})
 	return keys
 }
+func getSearchLabels(query string) string {
+	m := getParams(`(?m).*LABELS:(?P<Labels>[\w,]+)`, query)
+	return m["Labels"]
+}
 func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics home"))
 	fmt.Fprint(w, webMenu("/"))
@@ -214,17 +220,19 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("search")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
-	label := "D01"
 	occurenciesArr(w, "Labels")
-	db, err := LabeledDatabase(label)
-	if err == nil {
-		m := ArcpicsMostOcurrenceStrings(db)
-		occurenciesMap(w, "Author", m["author"])
-		occurenciesMap(w, "Location", m["location"])
-		occurenciesMap(w, "Keywords", m["keywords"])
-		occurenciesMap(w, "Comment", m["comment"])
+	if reSearchLabels.MatchString(query) {
+		label := getSearchLabels(query)
+		db, err := LabeledDatabase(label)
+		if err == nil {
+			m := ArcpicsMostOcurrenceStrings(db)
+			occurenciesMap(w, "Author", m["author"])
+			occurenciesMap(w, "Location", m["location"])
+			occurenciesMap(w, "Keywords", m["keywords"])
+			occurenciesMap(w, "Comment", m["comment"])
+		}
+		defer db.Close()
 	}
-	defer db.Close()
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))
