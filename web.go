@@ -209,7 +209,7 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 }
 func pageSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics search results"))
-	fmt.Fprint(w, webMenu("/"))
+	fmt.Fprint(w, webMenu("/search"))
 	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
 	query := r.URL.Query().Get("search")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
