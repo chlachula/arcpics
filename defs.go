@@ -33,6 +33,7 @@ var (
 	SYSTEM_BUCKET                 = []byte("SYSTEM")
 	FILES_BUCKET                  = []byte("FILES")
 	LabelMounts   LabelMountsType = make(map[string]string)
+	searchValue                   = ""
 )
 
 type (

@@ -119,13 +119,14 @@ var globalLabel = "GlobalLabelNotSet"
 	return fmt.Sprintf(htmlPage, title)
 }
 func webSearch() string {
-	s := `&nbsp; <form action="/search" method="get" style="display: inline;">
+	format := `&nbsp; <form action="/search" method="get" style="display: inline;">
 	<span>
 	    <button onclick="clearSearchInput()">clear</button>
-		<input type="text" id="search" name="search" value="" size="100" />
+		<input type="text" id="search" name="search" value="%s" size="100" />
 		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
 	</span>
 	</form>`
+	s := fmt.Sprintf(format, searchValue)
 	return s
 }
 func webMenu(link string) string {
@@ -214,10 +215,11 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<img src=\"%s\" />\n", imgSrc)
 }
 func pageSearch(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("search")
+	searchValue = query
 	fmt.Fprint(w, pageBeginning("Arcpics search results"))
 	fmt.Fprint(w, webMenu("/search"))
 	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
-	query := r.URL.Query().Get("search")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
 	occurenciesArr(w, "Labels")
