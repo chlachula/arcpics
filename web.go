@@ -84,9 +84,16 @@ func pageBeginning(title string) string {
 </style>
 <script>
 var globalLabel = "GlobalLabelNotSet"
-  function clearSearchInput() {
-	var x = document.getElementById("search");
+function clearInputById(id) {
+	var x = document.getElementById(id);
 	x.value = "";
+  }
+  function clearSearchInput() {
+	clearInputById("search");
+	clearInputById("id_author");
+	clearInputById("id_location");
+	clearInputById("id_keywords");
+	clearInputById("id_comment");
   }
   function addToSearchInput(text) {
 	var x = document.getElementById("search");
@@ -121,12 +128,17 @@ var globalLabel = "GlobalLabelNotSet"
 func webSearch() string {
 	format := `&nbsp; <form action="/search" method="get" style="display: inline;">
 	<span>
-	    <button onclick="clearSearchInput()">clear</button>
-		<input type="text" id="search" name="search" value="%s" size="100" />
+	    <button onclick="clearSearchInput()">clear</button><br/>
+		Labels <input type="text" id="search" name="search" value="%s" size="100" /><br/>
+		Author <input type="text" id="id_author" name="na_author" value="%s" size="100" /><br/>
+		Location <input type="text" id="id_location" name="na_location" value="%s" size="100" /><br/>
+		Keywords <input type="text" id="id_keywords" name="na_keywords" value="%s" size="100" /><br/>
+		Comment <input type="text" id="id_comment" name="na_comment" value="%s" size="100" /><br/>
 		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
 	</span>
 	</form>`
-	s := fmt.Sprintf(format, searchValue)
+	e := ""
+	s := fmt.Sprintf(format, searchValue, e, e, e, e)
 	return s
 }
 func webMenu(link string) string {
@@ -149,7 +161,6 @@ func webMenu(link string) string {
 		}
 		s += "</span> "
 	}
-	s += webSearch()
 	s += "\n<hr/>\n"
 	return s
 }
@@ -217,9 +228,10 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 func pageSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("search")
 	searchValue = query
-	fmt.Fprint(w, pageBeginning("Arcpics search results"))
+	fmt.Fprint(w, pageBeginning("Arcpics search"))
 	fmt.Fprint(w, webMenu("/search"))
-	fmt.Fprint(w, "<h1>Arcpics - Search results</h1>\n")
+	fmt.Fprint(w, webSearch())
+	fmt.Fprint(w, "<h1>Results</h1>\n")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
 	occurenciesArr(w, "Labels")
