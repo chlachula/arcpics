@@ -125,20 +125,27 @@ function clearInputById(id) {
 `
 	return fmt.Sprintf(htmlPage, title)
 }
-func webSearch() string {
+func webSearch(labelsOnly bool) string {
 	format := `&nbsp; <form action="/search" method="get" style="display: inline;">
 	<span>
-	    <button onclick="clearSearchInput()">clear</button><br/>
-		Labels <input type="text" id="search" name="search" value="%s" size="100" /><br/>
-		Author <input type="text" id="id_author" name="na_author" value="%s" size="100" /><br/>
-		Location <input type="text" id="id_location" name="na_location" value="%s" size="100" /><br/>
-		Keywords <input type="text" id="id_keywords" name="na_keywords" value="%s" size="100" /><br/>
-		Comment <input type="text" id="id_comment" name="na_comment" value="%s" size="100" /><br/>
+		%s
+		%s
+		<br/>
+	    <button onclick="clearSearchInput()">clear</button>
 		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
 	</span>
 	</form>`
 	e := ""
-	s := fmt.Sprintf(format, searchValue, e, e, e, e)
+	a1 := fmt.Sprintf(`Labels <input type="text" id="search" name="search" value="%s" size="100" /><br/>`, searchValue)
+	a4 := fmt.Sprintf(`		Author <input type="text" id="id_author" name="na_author" value="%s" size="100" /><br/>
+	Location <input type="text" id="id_location" name="na_location" value="%s" size="100" /><br/>
+	Keywords <input type="text" id="id_keywords" name="na_keywords" value="%s" size="100" /><br/>
+	Comment <input type="text" id="id_comment" name="na_comment" value="%s" size="100" />
+`, e, e, e, e)
+	s := fmt.Sprintf(format, a1, "")
+	if !labelsOnly {
+		s = fmt.Sprintf(format, a1, a4)
+	}
 	return s
 }
 func webMenu(link string) string {
@@ -228,9 +235,10 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 func pageSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("search")
 	searchValue = query
+	qEmpty := searchValue == ""
 	fmt.Fprint(w, pageBeginning("Arcpics search"))
 	fmt.Fprint(w, webMenu("/search"))
-	fmt.Fprint(w, webSearch())
+	fmt.Fprint(w, webSearch(qEmpty))
 	fmt.Fprint(w, "<h1>Results</h1>\n")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
