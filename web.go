@@ -81,6 +81,17 @@ func pageBeginning(title string) string {
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/klementinum/main/usage/to_embed/img/favicon1.ico">	
 <style>
+* {	box-sizing: border-box;  }
+
+  /* Tree unequal columns that floats next to each other */
+  .column {  float: left;  padding-left:10px;padding-right:10px;padding-top:5x;padding-bottom:5px;}
+
+  .left   {  width: 15%%;}
+  .middle {  width: 10%%;}
+  .right  {  width: 75%%;}
+
+  /* Clear floats after the columns */
+  .row:after {  content: "";display: table;clear: both;}
 </style>
 <script>
 var globalLabel = "GlobalLabelNotSet"
@@ -89,14 +100,14 @@ function clearInputById(id) {
 	x.value = "";
   }
   function clearSearchInput() {
-	clearInputById("search");
+	clearInputById("id_labels");
 	clearInputById("id_author");
 	clearInputById("id_location");
 	clearInputById("id_keywords");
 	clearInputById("id_comment");
   }
   function addToSearchInput(text) {
-	var x = document.getElementById("search");
+	var x = document.getElementById("id_labels");
 	x.value += text;
   }
   function toggleHideDisplay(myDIV) {
@@ -125,14 +136,14 @@ function clearInputById(id) {
 `
 	return fmt.Sprintf(htmlPage, title)
 }
-func webSearch(labelsOnly bool) string {
+func webSearch0(labelsOnly bool) string {
 	format := `&nbsp; <form action="/search" method="get" style="display: inline;">
 	<span>
 		%s
 		%s
 		<br/>
 	    <button onclick="clearSearchInput()">clear</button>
-		<input type="submit" value="&#x1F50D;" title="search for pictures and files"/>
+		<input type="submit" value="search &#x1F50D;" title="search for pictures and files"/>
 	</span>
 	</form>`
 	e := ""
@@ -147,6 +158,43 @@ func webSearch(labelsOnly bool) string {
 		s = fmt.Sprintf(format, a1, a4)
 	}
 	return s
+}
+func webSearch(labelsOnly bool) string {
+	format := `<form action="/search" method="get">
+	<div class="row">
+	  <div class="column left">Labels</div><div class="column middle">Option</div>
+	  <div class="column right"><input type="text" id="id_labels" name="na_labels" size="75%%" value="%s"></div>
+    </div>
+  
+  <div id="i4" style="display:%s">
+    <div class="row">
+	  <div class="column left">Author</div><div class="column middle">Option</div>
+	  <div class="column right"><input type="text" id="id_author" name="na_author" size="75%%"></div>
+    </div>
+    <div class="row">
+	  <div class="column left">Location</div><div class="column middle">Option</div>
+	  <div class="column right"><input type="text" id="id_location" name="na_location" size="75%%"></div>
+    </div>
+    <div class="row">
+	  <div class="column left">Keywords</div><div class="column middle">Option</div>
+	  <div class="column right"><input type="text" id="id_keywords" name="na_keywords" size="75%%"></div>
+    </div>
+    <div class="row">
+	  <div class="column left">Comment</div><div class="column middle">Option</div>
+	  <div class="column right"><input type="text" id="id_comment" name="na_commenct" size="75%%"></div>
+    </div>
+	</div>
+    <div class="row">
+	  <div class="column left">&nbsp;</div><div class="column middle"><button onclick="clearSearchInput()">clear</button></div>
+	  <div class="column right"><input type="submit" value="search &#x1F50D;" title="search for pictures and files"/></div>
+    </div>
+  </form>
+  `
+	if labelsOnly {
+		return fmt.Sprintf(format, searchValue, "none")
+	} else {
+		return fmt.Sprintf(format, searchValue, "block")
+	}
 }
 func webMenu(link string) string {
 	items := []struct {
@@ -233,7 +281,7 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<img src=\"%s\" />\n", imgSrc)
 }
 func pageSearch(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("search")
+	query := r.URL.Query().Get("na_labels")
 	searchValue = query
 	qEmpty := searchValue == ""
 	fmt.Fprint(w, pageBeginning("Arcpics search"))
