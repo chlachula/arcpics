@@ -99,13 +99,11 @@ func pageBeginning(title string) string {
   function checkShowHide(chk, id) {
 	var checkBox = document.getElementById(chk);
 	var text = document.getElementById(id);
-	console.log("checkShowHide BEFORE ("+chk+","+id+");checkBox.checked = "+checkBox.checked +"; text.style.display = "+text.style.display )
 	if (checkBox.checked == true){
 	   text.style.display = "block";
 	} else {
 	   text.style.display = "none";
 	}
-	console.log("checkShowHide AFTER  ("+chk+","+id+");checkBox.checked = "+checkBox.checked +"; text.style.display = "+text.style.display )
   }
   function clearInputById(id) {
 	var x = document.getElementById(id);
@@ -118,8 +116,8 @@ func pageBeginning(title string) string {
 	clearInputById("id_keywords");
 	clearInputById("id_comment");
   }
-  function addToSearchInput(text) {
-	var x = document.getElementById("id_labels");
+  function addToInputValue(text, id) {
+	var x = document.getElementById(id);
 	x.value += text;
   }
   function toggleHideDisplay(myDIV) {
@@ -171,7 +169,7 @@ func webSearch0(labelsOnly bool) string {
 	}
 	return s
 }
-func webSearch(query string) string {
+func webSearch(labels string) string {
 	format := `<form action="/search" method="get">
 	<div class="row">
 	  <div class="column left">Labels</div><div class="column middle"><input type="checkbox" id="ch_labels" onclick="checkShowHide('ch_labels','list_labels')"></div>
@@ -213,17 +211,17 @@ func webSearch(query string) string {
 	listL := "none"
 	listK := "none"
 	listC := "none"
-	label := getSearchLabels(query)
-	println("Josef label ", label)
+	label := labels
+	fmt.Printf("webSearch label='%s', labels=%s\n", label, labels)
 	db, err := LabeledDatabase(label)
 	if err == nil {
 		m := ArcpicsMostOcurrenceStrings(db)
-		listA = occurenciesList(m["author"])
-		listL = occurenciesList(m["location"])
-		listK = occurenciesList(m["keywords"])
-		listC = occurenciesList(m["comment"])
+		listA = occurenciesList("id_author", m["author"])
+		listL = occurenciesList("id_location", m["location"])
+		listK = occurenciesList("id_keywords", m["keywords"])
+		listC = occurenciesList("id_comment", m["comment"])
 	}
-	if query == "" {
+	if labels == "" {
 		return fmt.Sprintf(format, searchValue, occL, "none", listA, listL, listK, listC)
 	} else {
 		return fmt.Sprintf(format, searchValue, occL, "block", listA, listL, listK, listC)
@@ -264,12 +262,12 @@ func occurenciesLabels() string {
 	} else {
 		s := ""
 		for _, k := range labels {
-			s += fmt.Sprintf(" <button onclick=\"addToSearchInput('%s')\">%s</button> ", k, k)
+			s += fmt.Sprintf(" <button onclick=\"addToInputValue('%s','id_labels')\">%s</button> ", k, k)
 		}
 		return s
 	}
 }
-func occurenciesList(m map[string]int) string {
+func occurenciesList(id string, m map[string]int) string {
 	s := ""
 	for _, k := range aMapKeysSortedByFreguency(m) {
 		n := m[k]
@@ -277,7 +275,7 @@ func occurenciesList(m map[string]int) string {
 		if strings.Contains(k, " ") {
 			apostrofedK = "\\'" + k + "\\'"
 		}
-		s += fmt.Sprintf(" <button onclick=\"addToSearchInput('%s')\">%s</button>:%d ", apostrofedK, k, n)
+		s += fmt.Sprintf(" <button onclick=\"addToInputValue('%s','%s')\">%s</button>:%d ", apostrofedK, id, k, n)
 	}
 	s += "\n"
 	return s
@@ -285,7 +283,7 @@ func occurenciesList(m map[string]int) string {
 
 func occurenciesArr(w http.ResponseWriter, name string) {
 	nameColon := strings.ToUpper(name) + ":"
-	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
+	fmt.Fprintf(w, "\n <button onclick=\"addToInputValue('%s','id_labels')\"><b>%s:</b></button>\n", nameColon, name)
 	dbDir := GetDatabaseDirName()
 	labels, err := GetLabelsInDbDir(dbDir)
 	if err != nil {
@@ -297,7 +295,7 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 		return
 	} else {
 		for _, k := range labels {
-			fmt.Fprintf(w, " <button onclick=\"addToSearchInput('%s')\">%s</button> ", k, k)
+			fmt.Fprintf(w, " <button onclick=\"addToInputValue('%s', 'id_labels')\">%s</button> ", k, k)
 		}
 		fmt.Fprint(w, "\n<br/>\n<form action=\"./\" >")
 		for _, k := range labels {
@@ -310,14 +308,14 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 }
 func occurenciesMap(w http.ResponseWriter, name string, m map[string]int) {
 	nameColon := strings.ToUpper(name) + ":"
-	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
+	fmt.Fprintf(w, "\n <button onclick=\"addToInputValue('%s','id_%s')\"><b>%s:</b></button>\n", nameColon, name, name)
 	for _, k := range aMapKeysSortedByFreguency(m) {
 		n := m[k]
 		apostrofedK := k
 		if strings.Contains(k, " ") {
 			apostrofedK = "\\'" + k + "\\'"
 		}
-		fmt.Fprintf(w, " <button onclick=\"addToSearchInput('%s')\">%s</button>:%d ", apostrofedK, k, n)
+		fmt.Fprintf(w, " <button onclick=\"addToInputValue('%s','id_%s')\">%s</button>:%d ", apostrofedK, name, k, n)
 	}
 	fmt.Fprint(w, "\n<br/><br/>\n")
 }
