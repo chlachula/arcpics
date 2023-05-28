@@ -94,8 +94,20 @@ func pageBeginning(title string) string {
   .row:after {  content: "";display: table;clear: both;}
 </style>
 <script>
-var globalLabel = "GlobalLabelNotSet"
-function clearInputById(id) {
+  var globalLabel = "GlobalLabelNotSet"
+
+  function checkShowHide(chk, id) {
+	var checkBox = document.getElementById(chk);
+	var text = document.getElementById(id);
+	console.log("checkShowHide BEFORE ("+chk+","+id+");checkBox.checked = "+checkBox.checked +"; text.style.display = "+text.style.display )
+	if (checkBox.checked == true){
+	   text.style.display = "block";
+	} else {
+	   text.style.display = "none";
+	}
+	console.log("checkShowHide AFTER  ("+chk+","+id+");checkBox.checked = "+checkBox.checked +"; text.style.display = "+text.style.display )
+  }
+  function clearInputById(id) {
 	var x = document.getElementById(id);
 	x.value = "";
   }
@@ -159,30 +171,36 @@ func webSearch0(labelsOnly bool) string {
 	}
 	return s
 }
-func webSearch(labelsOnly bool) string {
+func webSearch(query string) string {
 	format := `<form action="/search" method="get">
 	<div class="row">
-	  <div class="column left">Labels</div><div class="column middle">Option</div>
+	  <div class="column left">Labels</div><div class="column middle"><input type="checkbox" id="ch_labels" onclick="checkShowHide('ch_labels','list_labels')"></div>
 	  <div class="column right"><input type="text" id="id_labels" name="na_labels" size="75%%" value="%s"></div>
     </div>
+	<div id="list_labels" style="display:none">%s</div>
+	
   
   <div id="i4" style="display:%s">
     <div class="row">
-	  <div class="column left">Author</div><div class="column middle">Option</div>
+	  <div class="column left">Author</div><div class="column middle"><input type="checkbox" id="ch_author" onclick="checkShowHide('ch_author','list_author')"></div>
 	  <div class="column right"><input type="text" id="id_author" name="na_author" size="75%%"></div>
     </div>
+	<div id="list_author" style="display:none">%s</div>
     <div class="row">
-	  <div class="column left">Location</div><div class="column middle">Option</div>
+	  <div class="column left">Location</div><div class="column middle"><input type="checkbox" id="ch_location" onclick="checkShowHide('ch_location','list_location')"></div>
 	  <div class="column right"><input type="text" id="id_location" name="na_location" size="75%%"></div>
     </div>
+	<div id="list_location" style="display:none">%s</div>
     <div class="row">
-	  <div class="column left">Keywords</div><div class="column middle">Option</div>
+	  <div class="column left">Keywords</div><div class="column middle"><input type="checkbox" id="ch_keywords" onclick="checkShowHide('ch_keywords','list_keywords')"></div>
 	  <div class="column right"><input type="text" id="id_keywords" name="na_keywords" size="75%%"></div>
     </div>
+	<div id="list_keywords" style="display:none">%s</div>
     <div class="row">
-	  <div class="column left">Comment</div><div class="column middle">Option</div>
-	  <div class="column right"><input type="text" id="id_comment" name="na_commenct" size="75%%"></div>
+	  <div class="column left">Comment</div><div class="column middle"><input type="checkbox" id="ch_comment" onclick="checkShowHide('ch_comment','list_comment')"></div>
+	  <div class="column right"><input type="text" id="id_comment" name="na_comment" size="75%%"></div>
     </div>
+	<div id="list_comment" style="display:none">%s</div>
 	</div>
     <div class="row">
 	  <div class="column left">&nbsp;</div><div class="column middle"><button onclick="clearSearchInput()">clear</button></div>
@@ -190,10 +208,25 @@ func webSearch(labelsOnly bool) string {
     </div>
   </form>
   `
-	if labelsOnly {
-		return fmt.Sprintf(format, searchValue, "none")
+	occL := occurenciesLabels()
+	listA := "none"
+	listL := "none"
+	listK := "none"
+	listC := "none"
+	label := getSearchLabels(query)
+	println("Josef label ", label)
+	db, err := LabeledDatabase(label)
+	if err == nil {
+		m := ArcpicsMostOcurrenceStrings(db)
+		listA = occurenciesList(m["author"])
+		listL = occurenciesList(m["location"])
+		listK = occurenciesList(m["keywords"])
+		listC = occurenciesList(m["comment"])
+	}
+	if query == "" {
+		return fmt.Sprintf(format, searchValue, occL, "none", listA, listL, listK, listC)
 	} else {
-		return fmt.Sprintf(format, searchValue, "block")
+		return fmt.Sprintf(format, searchValue, occL, "block", listA, listL, listK, listC)
 	}
 }
 func webMenu(link string) string {
@@ -219,6 +252,37 @@ func webMenu(link string) string {
 	s += "\n<hr/>\n"
 	return s
 }
+func occurenciesLabels() string {
+	dbDir := GetDatabaseDirName()
+	labels, err := GetLabelsInDbDir(dbDir)
+	if err != nil {
+		return fmt.Sprintf(" %s<br/>\n", err.Error())
+
+	}
+	if len(labels) < 1 {
+		return " No labels<br/>\n"
+	} else {
+		s := ""
+		for _, k := range labels {
+			s += fmt.Sprintf(" <button onclick=\"addToSearchInput('%s')\">%s</button> ", k, k)
+		}
+		return s
+	}
+}
+func occurenciesList(m map[string]int) string {
+	s := ""
+	for _, k := range aMapKeysSortedByFreguency(m) {
+		n := m[k]
+		apostrofedK := k
+		if strings.Contains(k, " ") {
+			apostrofedK = "\\'" + k + "\\'"
+		}
+		s += fmt.Sprintf(" <button onclick=\"addToSearchInput('%s')\">%s</button>:%d ", apostrofedK, k, n)
+	}
+	s += "\n"
+	return s
+}
+
 func occurenciesArr(w http.ResponseWriter, name string) {
 	nameColon := strings.ToUpper(name) + ":"
 	fmt.Fprintf(w, "\n <button onclick=\"addToSearchInput('%s')\"><b>%s:</b></button>\n", nameColon, name)
@@ -283,10 +347,9 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 func pageSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("na_labels")
 	searchValue = query
-	qEmpty := searchValue == ""
 	fmt.Fprint(w, pageBeginning("Arcpics search"))
 	fmt.Fprint(w, webMenu("/search"))
-	fmt.Fprint(w, webSearch(qEmpty))
+	fmt.Fprint(w, webSearch(searchValue))
 	fmt.Fprint(w, "<h1>Results</h1>\n")
 	fmt.Fprintf(w, "Query: %s<hr>\n", query)
 
