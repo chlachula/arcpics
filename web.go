@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 var mutex = &sync.Mutex{}
@@ -152,12 +153,12 @@ func webSearch0(labelsOnly bool) string {
 		%s
 		%s
 		<br/>
-	    <button onclick="clearSearchInput()">clear</button>
+	    <button type="button" onclick="clearSearchInput()">clear</button>
 		<input type="submit" value="search &#x1F50D;" title="search for pictures and files"/>
 	</span>
 	</form>`
 	e := ""
-	a1 := fmt.Sprintf(`Labels <input type="text" id="search" name="search" value="%s" size="100" /><br/>`, searchValue)
+	a1 := fmt.Sprintf(`Labels <input type="text" id="search" name="search" value="%s" size="100" /><br/>`, glob_searchLabels)
 	a4 := fmt.Sprintf(`		Author <input type="text" id="id_author" name="na_author" value="%s" size="100" /><br/>
 	Location <input type="text" id="id_location" name="na_location" value="%s" size="100" /><br/>
 	Keywords <input type="text" id="id_keywords" name="na_keywords" value="%s" size="100" /><br/>
@@ -166,6 +167,12 @@ func webSearch0(labelsOnly bool) string {
 	s := fmt.Sprintf(format, a1, "")
 	if !labelsOnly {
 		s = fmt.Sprintf(format, a1, a4)
+	}
+	return s
+}
+func x60(s string) string {
+	if len(s) > 60 {
+		return s[:60]
 	}
 	return s
 }
@@ -201,7 +208,7 @@ func webSearch(labels string) string {
 	<div id="list_comment" style="display:none">%s</div>
 	</div>
     <div class="row">
-	  <div class="column left">&nbsp;</div><div class="column middle"><button onclick="clearSearchInput()">clear</button></div>
+	  <div class="column left">&nbsp;</div><div class="column middle"><button type="button" onclick="clearSearchInput()">clear</button></div>
 	  <div class="column right"><input type="submit" value="search &#x1F50D;" title="search for pictures and files"/></div>
     </div>
   </form>
@@ -212,7 +219,7 @@ func webSearch(labels string) string {
 	listK := "none"
 	listC := "none"
 	label := labels
-	fmt.Printf("webSearch label='%s', labels=%s\n", label, labels)
+	fmt.Printf("%s-webSearch label='%s', labels=%s\n", time.Now().Format("15:04:05"), label, labels)
 	db, err := LabeledDatabase(label)
 	if err == nil {
 		m := ArcpicsMostOcurrenceStrings(db)
@@ -220,11 +227,13 @@ func webSearch(labels string) string {
 		listL = occurenciesList("id_location", m["location"])
 		listK = occurenciesList("id_keywords", m["keywords"])
 		listC = occurenciesList("id_comment", m["comment"])
+		defer db.Close()
 	}
+	fmt.Printf("%s-lists:\nA:%s\n L:%s\n K:%s\n C:%s\n", time.Now().Format("15:04:05"), x60(listA), x60(listL), x60(listK), x60(listC))
 	if labels == "" {
-		return fmt.Sprintf(format, searchValue, occL, "none", listA, listL, listK, listC)
+		return fmt.Sprintf(format, glob_searchLabels, occL, "none", listA, listL, listK, listC)
 	} else {
-		return fmt.Sprintf(format, searchValue, occL, "block", listA, listL, listK, listC)
+		return fmt.Sprintf(format, glob_searchLabels, occL, "block", listA, listL, listK, listC)
 	}
 }
 func webMenu(link string) string {
@@ -262,7 +271,7 @@ func occurenciesLabels() string {
 	} else {
 		s := ""
 		for _, k := range labels {
-			s += fmt.Sprintf(" <button onclick=\"addToInputValue('%s','id_labels')\">%s</button> ", k, k)
+			s += fmt.Sprintf(" <button type=\"button\" onclick=\"addToInputValue('%s','id_labels')\">%s</button> ", k, k)
 		}
 		return s
 	}
@@ -275,7 +284,7 @@ func occurenciesList(id string, m map[string]int) string {
 		if strings.Contains(k, " ") {
 			apostrofedK = "\\'" + k + "\\'"
 		}
-		s += fmt.Sprintf(" <button onclick=\"addToInputValue('%s','%s')\">%s</button>:%d ", apostrofedK, id, k, n)
+		s += fmt.Sprintf(" <button type=\"button\" onclick=\"addToInputValue('%s','%s')\">%s</button>:%d ", apostrofedK, id, k, n)
 	}
 	s += "\n"
 	return s
@@ -283,7 +292,7 @@ func occurenciesList(id string, m map[string]int) string {
 
 func occurenciesArr(w http.ResponseWriter, name string) {
 	nameColon := strings.ToUpper(name) + ":"
-	fmt.Fprintf(w, "\n <button onclick=\"addToInputValue('%s','id_labels')\"><b>%s:</b></button>\n", nameColon, name)
+	fmt.Fprintf(w, "\n <button type=\"button\" onclick=\"addToInputValue('%s','id_labels')\"><b>%s:</b></button>\n", nameColon, name)
 	dbDir := GetDatabaseDirName()
 	labels, err := GetLabelsInDbDir(dbDir)
 	if err != nil {
@@ -295,7 +304,7 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 		return
 	} else {
 		for _, k := range labels {
-			fmt.Fprintf(w, " <button onclick=\"addToInputValue('%s', 'id_labels')\">%s</button> ", k, k)
+			fmt.Fprintf(w, " <button type=\"button\" onclick=\"addToInputValue('%s', 'id_labels')\">%s</button> ", k, k)
 		}
 		fmt.Fprint(w, "\n<br/>\n<form action=\"./\" >")
 		for _, k := range labels {
@@ -308,14 +317,14 @@ func occurenciesArr(w http.ResponseWriter, name string) {
 }
 func occurenciesMap(w http.ResponseWriter, name string, m map[string]int) {
 	nameColon := strings.ToUpper(name) + ":"
-	fmt.Fprintf(w, "\n <button onclick=\"addToInputValue('%s','id_%s')\"><b>%s:</b></button>\n", nameColon, name, name)
+	fmt.Fprintf(w, "\n <button type=\"button\" onclick=\"addToInputValue('%s','id_%s')\"><b>%s:</b></button>\n", nameColon, name, name)
 	for _, k := range aMapKeysSortedByFreguency(m) {
 		n := m[k]
 		apostrofedK := k
 		if strings.Contains(k, " ") {
 			apostrofedK = "\\'" + k + "\\'"
 		}
-		fmt.Fprintf(w, " <button onclick=\"addToInputValue('%s','id_%s')\">%s</button>:%d ", apostrofedK, name, k, n)
+		fmt.Fprintf(w, " <button type=\"button\" onclick=\"addToInputValue('%s','id_%s')\">%s</button>:%d ", apostrofedK, name, k, n)
 	}
 	fmt.Fprint(w, "\n<br/><br/>\n")
 }
@@ -343,27 +352,32 @@ func pageHome(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<img src=\"%s\" />\n", imgSrc)
 }
 func pageSearch(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("na_labels")
-	searchValue = query
+	glob_searchLabels = r.URL.Query().Get("na_labels")
+	glob_searchAuthor = r.URL.Query().Get("na_author")
+	glob_searchLocation = r.URL.Query().Get("na_location")
+	glob_searchKeywords = r.URL.Query().Get("na_keywords")
+	glob_searchComment = r.URL.Query().Get("na_comment")
 	fmt.Fprint(w, pageBeginning("Arcpics search"))
 	fmt.Fprint(w, webMenu("/search"))
-	fmt.Fprint(w, webSearch(searchValue))
-	fmt.Fprint(w, "<h1>Results</h1>\n")
-	fmt.Fprintf(w, "Query: %s<hr>\n", query)
+	fmt.Fprint(w, webSearch(glob_searchLabels))
+	fmt.Fprintf(w, "<h1>Results</h1>\n<code><b>Labels :</b>%s</code><br/>\n<code><b>Author :</b>%s</code><br/>\n<code><b>Location:</b>%s</code><br/>\n<code><b>Keywords:</b>%s</code><br/>\n<code><b>Comment :</b>%s</code><br/>\n", glob_searchLabels, glob_searchAuthor, glob_searchLocation, glob_searchKeywords, glob_searchComment)
+	/*
+		fmt.Fprintf(w, "Query: %s<hr>\n", glob_searchLabels)
 
-	occurenciesArr(w, "Labels")
-	if reSearchLabels.MatchString(query) {
-		label := getSearchLabels(query)
-		db, err := LabeledDatabase(label)
-		if err == nil {
-			m := ArcpicsMostOcurrenceStrings(db)
-			occurenciesMap(w, "Author", m["author"])
-			occurenciesMap(w, "Location", m["location"])
-			occurenciesMap(w, "Keywords", m["keywords"])
-			occurenciesMap(w, "Comment", m["comment"])
+		occurenciesArr(w, "Labels")
+		if reSearchLabels.MatchString(glob_searchLabels) {
+			label := getSearchLabels(glob_searchLabels)
+			db, err := LabeledDatabase(label)
+			if err == nil {
+				m := ArcpicsMostOcurrenceStrings(db)
+				occurenciesMap(w, "Author", m["author"])
+				occurenciesMap(w, "Location", m["location"])
+				occurenciesMap(w, "Keywords", m["keywords"])
+				occurenciesMap(w, "Comment", m["comment"])
+			}
+			defer db.Close()
 		}
-		defer db.Close()
-	}
+	*/
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics"))
@@ -609,7 +623,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
-	fmt.Fprint(w, "<button onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
+	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
 	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"
 	fmt.Fprintf(w, head, `<a href="?C=N;O=D">Name</a>`, `<a href="?C=M;O=A">Last modified</a>`, `<a href="?C=S;O=A">Size</a>`, `<a href="?C=D;O=A">Description</a>`)

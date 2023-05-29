@@ -29,11 +29,15 @@ const (
 )
 
 var (
-	Verbose       bool            = false
-	SYSTEM_BUCKET                 = []byte("SYSTEM")
-	FILES_BUCKET                  = []byte("FILES")
-	LabelMounts   LabelMountsType = make(map[string]string)
-	searchValue                   = ""
+	Verbose             bool            = false
+	SYSTEM_BUCKET                       = []byte("SYSTEM")
+	FILES_BUCKET                        = []byte("FILES")
+	LabelMounts         LabelMountsType = make(map[string]string)
+	glob_searchLabels                   = ""
+	glob_searchAuthor                   = ""
+	glob_searchLocation                 = ""
+	glob_searchKeywords                 = ""
+	glob_searchComment                  = ""
 )
 
 type (
