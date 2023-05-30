@@ -461,3 +461,24 @@ func TestMostOccuringString(t *testing.T) {
 		t.Errorf("3b. error %s - want: %s; got: %s", fn, wantRate, gotRate)
 	}
 }
+
+// go test -run TestJdOk
+func TestJdOk(t *testing.T) {
+	fn := "jdOk"
+
+	heystack := "alfa beta gama"
+	want := true
+	got := jdOk(heystack, "")
+	if want != got {
+		t.Errorf("1a. error %s - want: %t; got: %t", fn, want, got)
+	}
+	got = jdOk(heystack, "beta")
+	if want != got {
+		t.Errorf("1b. error %s - want: %t; got: %t", fn, want, got)
+	}
+	want = false
+	got = jdOk(heystack, "alpha")
+	if want != got {
+		t.Errorf("1c. error %s - want: %t; got: %t", fn, want, got)
+	}
+}

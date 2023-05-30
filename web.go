@@ -361,6 +361,21 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, webMenu("/search"))
 	fmt.Fprint(w, webSearch(glob_searchLabels))
 	fmt.Fprintf(w, "<h1>Results</h1>\n<code><b>Labels :</b>%s</code><br/>\n<code><b>Author :</b>%s</code><br/>\n<code><b>Location:</b>%s</code><br/>\n<code><b>Keywords:</b>%s</code><br/>\n<code><b>Comment :</b>%s</code><br/>\n", glob_searchLabels, glob_searchAuthor, glob_searchLocation, glob_searchKeywords, glob_searchComment)
+
+	///////////////
+	label := glob_searchLabels // for now
+	var keys []string
+	db, err := LabeledDatabase(label)
+	if err == nil {
+		keys = ArcpicsSearchFilesKeys(db, glob_searchAuthor, glob_searchLocation, glob_searchKeywords, glob_searchComment)
+		defer db.Close()
+	}
+	for _, k := range keys {
+		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
+		fmt.Fprintf(w, "<br/> %s\n", link)
+	}
+
+	///////////////
 	/*
 		fmt.Fprintf(w, "Query: %s<hr>\n", glob_searchLabels)
 
@@ -458,8 +473,7 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, webMenu(""))
 	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
 	fmt.Fprintf(w, lblfmt, label)
-	nodes := makeNodes(keys)
-	fmt.Fprintf(w, "<br/> %v<br/>\n", nodes)
+	//nodes := makeNodes(keys)
 	for _, k := range keys {
 		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
 		fmt.Fprintf(w, "<br/> %s\n", link)

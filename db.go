@@ -238,7 +238,21 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 	insertFrequencyWords(db, LABEL_FREQUENCY_WORDS, m)
 	return nil
 }
-
+func jdOkArgs(jd JdirType, author, location, kw, comment string) bool {
+	if jdOk(jd.MostAuthor, author) && jdOk(jd.MostLocation, location) && jdOk(jd.MostKeywords, kw) && jdOk(jd.MostComment, comment) {
+		return true
+	}
+	return false
+}
+func jdOk(heystack, needle string) bool {
+	if needle == "" {
+		return true
+	}
+	if strings.Contains(heystack, needle) {
+		return true
+	}
+	return false
+}
 func ArcpicsAllKeys(db *bolt.DB, bucket []byte) []string {
 	keys := make([]string, 0)
 	db.View(func(tx *bolt.Tx) error {
@@ -251,6 +265,28 @@ func ArcpicsAllKeys(db *bolt.DB, bucket []byte) []string {
 			//fmt.Printf("key=%s, value=%s\n", k, v)
 			_ = v
 			keys = append(keys, string(k))
+		}
+
+		return nil
+	})
+	return keys
+}
+func ArcpicsSearchFilesKeys(db *bolt.DB, author, location, kw, comment string) []string {
+	keys := make([]string, 0)
+	db.View(func(tx *bolt.Tx) error {
+		// Assume bucket exists and has keys
+		b := tx.Bucket(FILES_BUCKET)
+
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			var jd JdirType
+			err := json.Unmarshal(v, &jd)
+			if err == nil {
+				if jdOkArgs(jd, author, location, kw, comment) {
+					keys = append(keys, string(k))
+				}
+			}
 		}
 
 		return nil
