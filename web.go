@@ -483,6 +483,9 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 func pageImageFile(w http.ResponseWriter, r *http.Request) {
 	params := getParams(reImageFileStr, r.URL.Path)
 	fname := params["Fname"]
+	if strings.Contains(fname, ":") && strings.HasPrefix(fname, "/") {
+		fname = fname[1:]
+	}
 	f, err := os.Open(fname)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

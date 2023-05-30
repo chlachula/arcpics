@@ -111,4 +111,5 @@ Examples:
 -a1 %sArc-Pics               #populates  %sVacation-2023.db by data in subdirs at %sArc-Pics
 -af %sArc-Pics               #updates arcpics.json dir files inside of directories at %sArc-Pics
 -ab %sArc-Pics               #updates database %sVacation-2023.db
+-m %sArc-Pics -w             #mounted one external directory and launch web
 `
