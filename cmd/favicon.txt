@@ -2,3 +2,4 @@ favicon idea:
   Letter 'Arc'on blue waves
   with free font
   https://www.1001fonts.com/search.html?text=Arc&size=9&items=50&search=Chomsky
+  curl -k  https://www.1001fonts.com/download/chomsky.zip -O

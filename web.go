@@ -80,7 +80,7 @@ func route(w http.ResponseWriter, r *http.Request) {
 func pageBeginning(title string) string {
 	htmlPage := `<html><head>  <title>%s</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/klementinum/main/usage/to_embed/img/favicon1.ico">	
+  <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/arcpics/main/cmd/favicon-Arc-bw-32.ico">	
 <style>
 * {	box-sizing: border-box;  }
 
