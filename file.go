@@ -581,7 +581,7 @@ func CmdHelp(msg string) string {
 		r = "E:\\"
 		h = "C:\\Users\\joe\\.arcpics\\"
 	}
-	s = s + fmt.Sprintf(HelpTextFmt, Version, r, r, r, h, r, r, r, r, h)
+	s = s + fmt.Sprintf(HelpTextFmt, Version, r, r, r, h, r, r, r, r, h, r)
 	return s
 }
 func extractDir(path string) (string, string) {
