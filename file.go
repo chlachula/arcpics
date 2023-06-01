@@ -90,6 +90,20 @@ func getLabel(archiveDir string) (string, error) {
 	return label, nil
 }
 
+// find all label files with prefix defaultNameDashLabelDot in root subdirectories
+func getPathLabels(root string) []string {
+	s := make([]string, 0)
+	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return fs.SkipDir
+		}
+		if d.IsDir() {
+		}
+		return nil
+	})
+
+	return s
+}
 func FilesCount(fsys fs.FS) (count int) {
 	fs.WalkDir(fsys, ".", func(p string, d fs.DirEntry, err error) error {
 		count++
