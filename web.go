@@ -18,6 +18,7 @@ var mutex = &sync.Mutex{}
 
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
+var reMount = regexp.MustCompile(`(?m)\/mount[\/]{0,1}$`)
 var reSearchStr = `(?m)\/search[\/]{0,1}(?P<Query>.*)$`
 var reSearch = regexp.MustCompile(reSearchStr)
 var reLabels = regexp.MustCompile(`(?m)^\/labels[\/]{0,1}$`)
@@ -72,6 +73,8 @@ func route(w http.ResponseWriter, r *http.Request) {
 		pageLabels(w, r)
 	case reAbout.MatchString(r.URL.Path):
 		pageAbout(w, r)
+	case reMount.MatchString(r.URL.Path):
+		pageMount(w, r)
 	default:
 		w.Write([]byte("<a href='/'>home</a> Unrecognized URL Pattern r.URL.Path=" + r.URL.Path))
 	}
@@ -131,7 +134,7 @@ func pageBeginning(title string) string {
   }
   function mountLabel(label) {
 	//alert("mount label: "+label)
-	window.open("/about", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400");
+	window.open("/mount", "_blank", "location=no,toolbar=no,scrollbars=yes,resizable=yes,menubar=no,top=300,left=500,width=800,height=400");
   }
   function mountLabelByBrowser(label) {
 	console.log("mount label 1: "+label)
@@ -679,6 +682,14 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Fprint(w, "\n<br/>\n")
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
+}
+
+func pageMount(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("Arcpics: Mount Label"))
+	fmt.Fprintf(w, `<h1>Arcpics: Mount Label</h1>
+	<input type="button" value="cancel"/> Mount Label %s <input type="button" value="mount"/>
+	<hr/>
+	abcd`, "XXX")
 }
 
 func Web(port int) {
