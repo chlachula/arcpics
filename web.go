@@ -134,7 +134,7 @@ func pageBeginning(title string) string {
   }
   function mountLabel(label) {
 	//alert("mount label: "+label)
-	window.open("/mount", "_blank", "location=no,toolbar=no,scrollbars=yes,resizable=yes,menubar=no,top=300,left=500,width=800,height=400");
+	window.open("/mount?label="+label, "_blank", "location=no,toolbar=no,scrollbars=yes,resizable=yes,menubar=no,top=300,left=500,width=800,height=400");
   }
   function mountLabelByBrowser(label) {
 	console.log("mount label 1: "+label)
@@ -685,11 +685,11 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 }
 
 func pageMount(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, pageBeginning("Arcpics: Mount Label"))
-	fmt.Fprintf(w, `<h1>Arcpics: Mount Label</h1>
-	<input type="button" value="cancel"/> Mount Label %s <input type="button" value="mount"/>
+	label := r.URL.Query().Get("label")
+	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
+	fmt.Fprintf(w, `<input type="button" value="cancel"/> Mount external Label %s <input type="button" value="mount"/>
 	<hr/>
-	abcd`, "XXX")
+	abcd`, label)
 }
 
 func Web(port int) {
