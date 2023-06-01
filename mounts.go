@@ -17,6 +17,7 @@ func (lm *LabelMountsType) Html(label string) string {
 	if mountPoint != "" {
 		s += fmt.Sprintf("<b>mounted at</b> %s", mountPoint)
 	} else {
+		s += fmt.Sprintf("<button onclick=\"mountLabelByBrowser('%s')\">mount label by browser %s</button> &nbsp; ", label, label)
 		s += fmt.Sprintf("<button onclick=\"mountLabel('%s')\">mount label %s</button>", label, label)
 	}
 	return s

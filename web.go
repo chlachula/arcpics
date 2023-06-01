@@ -130,6 +130,10 @@ func pageBeginning(title string) string {
 	}
   }
   function mountLabel(label) {
+	//alert("mount label: "+label)
+	window.open("/about", "_blank", "toolbar=yes,scrollbars=yes,resizable=yes,top=500,left=500,width=400,height=400");
+  }
+  function mountLabelByBrowser(label) {
 	console.log("mount label 1: "+label)
 	//alert("mount label: "+label)
 	globalLabel = label
