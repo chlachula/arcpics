@@ -97,7 +97,10 @@ func getPathLabels(root string) []string {
 		if err != nil {
 			return fs.SkipDir
 		}
-		if d.IsDir() {
+		if !d.IsDir() {
+			if strings.HasPrefix(d.Name(), defaultNameDashLabelDot) {
+				s = append(s, path)
+			}
 		}
 		return nil
 	})

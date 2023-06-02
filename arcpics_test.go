@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/boltdb/bolt"
@@ -459,6 +460,25 @@ func TestMostOccuringString(t *testing.T) {
 	}
 	if wantRate != gotRate {
 		t.Errorf("3b. error %s - want: %s; got: %s", fn, wantRate, gotRate)
+	}
+}
+
+// go test -run TestGetPathLabels
+func TestGetPathLabels(t *testing.T) {
+	fn := "getPathLabels"
+
+	root := "example/Arc-Pics"
+	pathLabels := getPathLabels(root)
+
+	want := 1
+	got := len(pathLabels)
+	if want != got {
+		t.Errorf("1a. error %s - want: %d; got: %d\npathLabels = %v", fn, want, got, pathLabels)
+	}
+	wantT := true
+	gotT := strings.HasSuffix(pathLabels[0], ".TEST")
+	if want != got {
+		t.Errorf("1a. error %s - want: %t; got: %t\npathLabels = %v", fn, wantT, gotT, pathLabels)
 	}
 }
 
