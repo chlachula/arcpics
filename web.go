@@ -687,7 +687,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 func pageMount(w http.ResponseWriter, r *http.Request) {
 	label := r.URL.Query().Get("label")
 	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
-	fmt.Fprintf(w, `<input type="button" value="cancel"/> Mount external Label %s <input type="button" value="mount"/>
+	fmt.Fprintf(w, `<input type="button" value="cancel"/> Manage root mount points for external labels %s <input type="button" value="mount"/>
 	<hr/>
 	abcd`, label)
 }
