@@ -102,6 +102,7 @@ func pageBeginning(title string) string {
 </style>
 <script>
   var globalLabel = "GlobalLabelNotSet"
+  var mountWindow
 
   function checkShowHide(chk, id) {
 	var checkBox = document.getElementById(chk);
@@ -136,8 +137,10 @@ func pageBeginning(title string) string {
 	}
   }
   function mountLabel(label) {
-	//alert("mount label: "+label)
-	window.open("/mount?label="+label, "_blank", "location=no,toolbar=no,scrollbars=yes,resizable=yes,menubar=no,top=300,left=500,width=800,height=400");
+	mountWindow = window.open("/mount?label="+label, "_blank", "location=no,toolbar=no,scrollbars=yes,resizable=yes,menubar=no,top=300,left=500,width=800,height=400");
+  }
+  function mountClose() {
+	window.close();
   }
   function mountLabelByBrowser(label) {
 	console.log("mount label 1: "+label)
@@ -690,7 +693,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 func pageMount(w http.ResponseWriter, r *http.Request) {
 	label := r.URL.Query().Get("label")
 	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
-	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="cancel"/></div>
+	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="cancel" onclick="mountClose();"/></div>
 <div class="column c3middle">Manage root mount points for external labels %s</div>
 <div class="column c3right"><input type="button" value="mount"/></div>
 <hr/>
