@@ -93,6 +93,9 @@ func pageBeginning(title string) string {
   .left   {  width: 15%%;}
   .middle {  width: 10%%;}
   .right  {  width: 75%%;}
+  .c3left   {  width: 15%%;}
+  .c3middle {  width: 70%%;}
+  .c3right  {  width: 15%%;}
 
   /* Clear floats after the columns */
   .row:after {  content: "";display: table;clear: both;}
@@ -687,9 +690,11 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 func pageMount(w http.ResponseWriter, r *http.Request) {
 	label := r.URL.Query().Get("label")
 	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
-	fmt.Fprintf(w, `<input type="button" value="cancel"/> Manage root mount points for external labels %s <input type="button" value="mount"/>
-	<hr/>
-	abcd`, label)
+	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="cancel"/></div>
+<div class="column c3middle">Manage root mount points for external labels %s</div>
+<div class="column c3right"><input type="button" value="mount"/></div>
+<hr/>
+abcd`, label)
 }
 
 func Web(port int) {
