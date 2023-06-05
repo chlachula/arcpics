@@ -194,7 +194,8 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 		if err != nil {
 			panic(err)
 		}
-		insertNewBucket(db, FILES_BUCKET) // insert FILES bucket just once
+		insertNewBucket(db, FILES_BUCKET)  // insert FILES bucket just once
+		insertNewBucket(db, MOUNTS_BUCKET) // insert MOUNTD bucket just once
 
 	}
 	picturesDirName = strings.TrimSuffix(picturesDirName, "/")

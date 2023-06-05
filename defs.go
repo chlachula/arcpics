@@ -32,6 +32,7 @@ var (
 	Verbose             bool            = false
 	SYSTEM_BUCKET                       = []byte("SYSTEM")
 	FILES_BUCKET                        = []byte("FILES")
+	MOUNTS_BUCKET                       = []byte("MOUNTS")
 	LabelMounts         LabelMountsType = make(map[string]string)
 	glob_searchLabels                   = ""
 	glob_searchAuthor                   = ""
