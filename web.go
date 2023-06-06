@@ -739,7 +739,11 @@ func pageMount(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `<div class="column c2right">%s`, "\n")
 	if mountdir != "" {
 		LabelMounts[label] = mountdir
-		//insert2MountDirNow(db, mountdir)
+		db, err := LabeledDatabase(label)
+		if err == nil {
+			insert2MountDirNow(db, mountdir)
+			db.Close()
+		}
 		fmt.Fprintf(w, `<h2>Directory %s has been mounted to label %s</h2>`, mountdir, label)
 		return
 	}
@@ -764,7 +768,6 @@ func pageMount(w http.ResponseWriter, r *http.Request) {
 				if foundLabel == "" {
 					fmt.Fprintf(w, `<a href="/mount?label=%s&localdir=%s">&#x1F4C1;</a> %s<br/>%s`, label, dir, d.Name(), "\n")
 				} else {
-					println("foundLabel =", foundLabel)
 					if label == foundLabel {
 						fmt.Fprintf(w, `<span style="background-color: lightgreen">&#x1F4C1; %s - label: %s <a href="/mount?label=%s&mountdir=%s"><b>mount</b></a></span><br/>%s`, d.Name(), label, label, dir, "\n")
 					} else {
