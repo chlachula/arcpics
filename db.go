@@ -258,6 +258,10 @@ func ArcpicsAllKeys(db *bolt.DB, bucket []byte) []string {
 	db.View(func(tx *bolt.Tx) error {
 		// Assume bucket exists and has keys
 		b := tx.Bucket(bucket)
+		if b == nil {
+			fmt.Printf("ArcpicsAllKeys: bucket %s is nil\n", string(bucket))
+			return nil
+		}
 
 		c := b.Cursor()
 

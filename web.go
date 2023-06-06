@@ -277,7 +277,6 @@ func occurenciesLabels() string {
 	labels, err := GetLabelsInDbDir(dbDir)
 	if err != nil {
 		return fmt.Sprintf(" %s<br/>\n", err.Error())
-
 	}
 	if len(labels) < 1 {
 		return " No labels<br/>\n"
@@ -700,7 +699,39 @@ func pageMount(w http.ResponseWriter, r *http.Request) {
 abcd`, label)
 }
 
+// find for all labels if previously mounted directory is available or defined from CLI by -m option
+// and record it into db
+func ConnectLabelsToMountDirs() {
+	dbDir := GetDatabaseDirName()
+	labels, err := GetLabelsInDbDir(dbDir)
+	if err != nil {
+		fmt.Printf("ConnectLabelsToMountDirs: %s\n", err.Error())
+		return
+	}
+	for _, label := range labels {
+		dir := LabelMounts[label]
+		db, err := LabeledDatabase(label)
+		if err != nil {
+			continue
+		}
+		if dir != "" {
+			insert2MountDirNow(db, dir)
+		} else {
+			lastDir := lastMountedDir(db)
+			if lastDir != "" {
+				if DirExists(lastDir) {
+					LabelMounts[label] = lastDir
+					insert2MountDirNow(db, lastDir)
+				}
+			}
+		}
+		db.Close()
+
+	}
+
+}
 func Web(port int) {
+	ConnectLabelsToMountDirs()
 	http.HandleFunc("/", route)
 
 	colonPort := fmt.Sprintf(":%d", port)

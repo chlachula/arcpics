@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -79,10 +80,29 @@ func insert2System_KeyValueStrings(db *bolt.DB, key, value string) error {
 	return insert2System_KeyValue(db, []byte(key), []byte(value))
 }
 func insert2System_KeyValue(db *bolt.DB, keyBytes, valueBytes []byte) error {
+	return insert2bucket_KeyValue(db, []byte(SYSTEM_BUCKET), keyBytes, valueBytes)
+}
+func insert2MountDirNow(db *bolt.DB, dir string) {
+	insert2bucket_KeyValue(db, []byte(MOUNTS_BUCKET), []byte(dir), []byte(time.Now().Format(time.DateTime)))
+}
+func lastMountedDir(db *bolt.DB) string {
+	mountedDirsInPast := ArcpicsAllKeys(db, MOUNTS_BUCKET)
+	latestTime := ""
+	latestDir := ""
+	for _, dir := range mountedDirsInPast {
+		t := GetDbValue(db, MOUNTS_BUCKET, dir)
+		if t > latestTime {
+			latestTime = t
+			latestDir = dir
+		}
+	}
+	return latestDir
+}
+func insert2bucket_KeyValue(db *bolt.DB, bucket, keyBytes, valueBytes []byte) error {
 	err := db.Update(func(tx *bolt.Tx) error {
-		err := tx.Bucket([]byte(SYSTEM_BUCKET)).Put(keyBytes, valueBytes)
+		err := tx.Bucket(bucket).Put(keyBytes, valueBytes)
 		if err != nil {
-			return fmt.Errorf("bucket:%s, key:%s - Could not insert value:%v", SYSTEM_BUCKET, string(keyBytes), err)
+			return fmt.Errorf("bucket:%s, key:%s - Could not insert value:%v", string(bucket), string(keyBytes), err)
 		}
 		return nil
 	})
@@ -196,7 +216,7 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 		}
 		insertNewBucket(db, FILES_BUCKET)  // insert FILES bucket just once
 		insertNewBucket(db, MOUNTS_BUCKET) // insert MOUNTD bucket just once
-
+		insert2MountDirNow(db, picturesDirName)
 	}
 	picturesDirName = strings.TrimSuffix(picturesDirName, "/")
 	arcFS, err = OpenArcpicsFS(picturesDirName)
