@@ -1,6 +1,9 @@
 package arcpics
 
-import "fmt"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 func (lm *LabelMountsType) Set(label string, value string) {
 	(*lm)[label] = value
@@ -31,6 +34,11 @@ func MountLabeledDirectory(dir string) error {
 	if err != nil {
 		return fmt.Errorf("-m %s :error %s", dir, err.Error())
 	}
-	LabelMounts.Set(label, dir)
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		fmt.Printf("error at MountLabeledDirectory converting to abs path dir: '%s'", dir)
+	}
+
+	LabelMounts.Set(label, absDir)
 	return nil
 }
