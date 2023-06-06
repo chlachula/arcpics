@@ -259,7 +259,7 @@ func ArcpicsAllKeys(db *bolt.DB, bucket []byte) []string {
 		// Assume bucket exists and has keys
 		b := tx.Bucket(bucket)
 		if b == nil {
-			fmt.Printf("ArcpicsAllKeys: bucket %s is nil\n", string(bucket))
+			fmt.Printf("ArcpicsAllKeys: %v bucket %s is nil\n", db, string(bucket))
 			return nil
 		}
 

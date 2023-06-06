@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -96,6 +97,8 @@ func pageBeginning(title string) string {
   .c3left   {  width: 15%%;}
   .c3middle {  width: 70%%;}
   .c3right  {  width: 15%%;}
+  .c2left   {  width: 15%%;}
+  .c2right  {  width: 85%%;}
 
   /* Clear floats after the columns */
   .row:after {  content: "";display: table;clear: both;}
@@ -688,15 +691,41 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\n<br/>\n")
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
 }
-
+func RootMountDirs() []string {
+	s := make([]string, 0)
+	user := os.Getenv("USER")
+	if runtime.GOOS == "windows" {
+		s = append(s, "C:\\")
+		// https://stackoverflow.com/questions/286534/enumerating-all-available-drive-letters-in-windows
+	} else {
+		s = append(s, "/")
+		s = append(s, "/media/"+user)
+	}
+	s = append(s, os.Getenv("HOME"))
+	return s
+}
 func pageMount(w http.ResponseWriter, r *http.Request) {
+	//params := getParams(`\/label-list\/(?P<Label>[a-zA-z0-9]+)$`, r.URL.Path)
+	//label := params["Label"]
 	label := r.URL.Query().Get("label")
+	localdir := r.URL.Query().Get("localdir")
 	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
 	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="cancel" onclick="mountClose();"/></div>
 <div class="column c3middle">Manage root mount points for external labels %s</div>
 <div class="column c3right"><input type="button" value="mount"/></div>
 <hr/>
-abcd`, label)
+`, label)
+
+	fmt.Fprintf(w, `<div class="column c2left" style="background-color: lightgray">%s`, "\n")
+	for _, d := range RootMountDirs() {
+		fmt.Fprintf(w, `<a href="/mount?label=%s&localdir=%s">%s</a><br/>%s`, label, d, d, "\n")
+	}
+	fmt.Fprintf(w, `%s</div>`, "\n")
+
+	fmt.Fprintf(w, `<div class="column c2right">%s`, "\n")
+	fmt.Fprintf(w, `<b>Local directory</b>: %s<br/>%s`, localdir, "\n")
+	fmt.Fprintf(w, `%s</div>`, "\n")
+
 }
 
 // find for all labels if previously mounted directory is available or defined from CLI by -m option
