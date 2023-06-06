@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -704,15 +705,28 @@ func RootMountDirs() []string {
 	s = append(s, os.Getenv("HOME"))
 	return s
 }
+
+// function similar to getLabel maybe should be found common ground
+func findLabel(dir string) string {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return ""
+	}
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), defaultNameDashLabelDot) {
+			return f.Name()[len(defaultNameDashLabelDot):]
+		}
+	}
+	return ""
+}
 func pageMount(w http.ResponseWriter, r *http.Request) {
-	//params := getParams(`\/label-list\/(?P<Label>[a-zA-z0-9]+)$`, r.URL.Path)
-	//label := params["Label"]
 	label := r.URL.Query().Get("label")
 	localdir := r.URL.Query().Get("localdir")
+	mountdir := r.URL.Query().Get("mountdir")
 	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
-	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="cancel" onclick="mountClose();"/></div>
+	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="Close" onclick="mountClose();"/></div>
 <div class="column c3middle">Manage root mount points for external labels %s</div>
-<div class="column c3right"><input type="button" value="mount"/></div>
+<div class="column c3right"><input type="button" value="mount"/> </div>
 <hr/>
 `, label)
 
@@ -723,7 +737,43 @@ func pageMount(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `%s</div>`, "\n")
 
 	fmt.Fprintf(w, `<div class="column c2right">%s`, "\n")
-	fmt.Fprintf(w, `<b>Local directory</b>: %s<br/>%s`, localdir, "\n")
+	if mountdir != "" {
+		LabelMounts[label] = mountdir
+		//insert2MountDirNow(db, mountdir)
+		fmt.Fprintf(w, `<h2>Directory %s has been mounted to label %s</h2>`, mountdir, label)
+		return
+	}
+	if localdir == "" {
+		fmt.Fprintf(w, `</div>%s`, "\n")
+		return
+	}
+	dirs, err := ioutil.ReadDir(localdir)
+	if err != nil {
+		fmt.Fprintf(w, `%s`, err.Error())
+	} else {
+		sep := "/"
+		if runtime.GOOS == "windows" {
+			sep = "\\"
+		}
+		pDir := localdir + sep + ".."
+		fmt.Fprintf(w, `<a href="/mount?label=%s&localdir=%s">%s</a><br/>%s`, label, pDir, "..", "\n")
+		for _, d := range dirs {
+			if d.IsDir() {
+				dir := localdir + sep + d.Name()
+				foundLabel := findLabel(dir)
+				if foundLabel == "" {
+					fmt.Fprintf(w, `<a href="/mount?label=%s&localdir=%s">&#x1F4C1;</a> %s<br/>%s`, label, dir, d.Name(), "\n")
+				} else {
+					println("foundLabel =", foundLabel)
+					if label == foundLabel {
+						fmt.Fprintf(w, `<span style="background-color: lightgreen">&#x1F4C1; %s - label: %s <a href="/mount?label=%s&mountdir=%s"><b>mount</b></a></span><br/>%s`, d.Name(), label, label, dir, "\n")
+					} else {
+						fmt.Fprintf(w, `<span style="background-color: lightgreen"><a href="/mount?label=%s&localdir=%s">&#x1F4C1;</a> %s - label: %s</span><br/>%s`, label, dir, d.Name(), foundLabel, "\n")
+					}
+				}
+			}
+		}
+	}
 	fmt.Fprintf(w, `%s</div>`, "\n")
 
 }
