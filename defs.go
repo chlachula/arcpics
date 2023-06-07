@@ -9,7 +9,7 @@ line:
 	move Windows/Ubuntu — Alt + Up/Down arrow
 */
 const (
-	Version                 string = "0.0.4"
+	Version                 string = "0.0.5"
 	defaultName                    = "arcpics"                  // arcpics
 	defaultNameDash                = defaultName + "-"          // arcpics-
 	defaultNameDashLabel           = defaultNameDash + "label"  // arcpics-label
@@ -56,30 +56,26 @@ type (
 	}
 )
 
+type JinfoType = struct {
+	Author   string `json:",omitempty"`
+	Location string `json:",omitempty"`
+	Keywords string `json:",omitempty"`
+	Comment  string `json:",omitempty"`
+}
 type JfileType = struct {
 	Name      string
 	Size      string
-	Time      string //
-	Author    string `json:",omitempty"`
-	Location  string `json:",omitempty"`
-	Keywords  string `json:",omitempty"`
-	Comment   string `json:",omitempty"`
-	Thumbnail []byte `json:",omitempty"`
-	ThumbSrc  string `json:",omitempty"`
+	Time      string    //
+	Info      JinfoType `json:",omitempty"`
+	Thumbnail []byte    `json:",omitempty"`
+	ThumbSrc  string    `json:",omitempty"`
 }
 type JdirType = struct {
-	Description  string      `json:",omitempty"`
-	Author       string      `json:",omitempty"`
-	Location     string      `json:",omitempty"`
-	Keywords     string      `json:",omitempty"`
-	Comment      string      `json:",omitempty"`
-	MostAuthor   string      `json:",omitempty"`
-	MostLocation string      `json:",omitempty"`
-	MostKeywords string      `json:",omitempty"`
-	MostComment  string      `json:",omitempty"`
-	Skip         []string    `json:",omitempty"`
-	Files        []JfileType `json:",omitempty"`
-	Dirs         []string    `json:",omitempty"`
+	Info  JinfoType   `json:",omitempty"`
+	Most  JinfoType   `json:",omitempty"`
+	Skip  []string    `json:",omitempty"`
+	Files []JfileType `json:",omitempty"`
+	Dirs  []string    `json:",omitempty"`
 }
 type FrequencyCounterType map[string]int
 type LabelMountsType map[string]string

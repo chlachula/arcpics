@@ -651,8 +651,8 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 
 	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s %s<hr/>\n"
 	comments := ""
-	if jd.MostComment != "" {
-		comments = "most comments: " + jd.MostComment
+	if jd.Most.Comment != "" {
+		comments = "most comments: " + jd.Most.Comment
 	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
@@ -666,7 +666,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 	for _, f := range jd.Files {
 		fixNameLink(w, label, path, f.Name, false)
-		fmt.Fprintf(w, "%-26s%10s %s\n", f.Time, f.Size, f.Comment)
+		fmt.Fprintf(w, "%-26s%10s %s\n", f.Time, f.Size, f.Info.Comment)
 	}
 	for _, d := range jd.Dirs {
 		fixNameLink(w, label, path+"/"+d, d, true)
@@ -677,7 +677,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\n</pre><hr/>\n")
 	for _, f := range jd.Files {
 		if isJpegFile(f.Name) {
-			title := f.Name + ": " + f.Comment
+			title := f.Name + ": " + f.Info.Comment
 			if mountDir != "" {
 				title += " - click for full picture"
 			}

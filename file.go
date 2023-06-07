@@ -151,39 +151,36 @@ func DirCount(fsys fs.FS) (countDir int, totalPathLength int) {
 	})
 	return countDir, total
 }
+func jInfoIsEqual(a, b JinfoType) bool {
+	if a.Author != b.Author {
+		return false
+	}
+	if a.Location != b.Location {
+		return false
+	}
+	if a.Location != b.Location {
+		return false
+	}
+	if a.Keywords != b.Keywords {
+		return false
+	}
+	if a.Comment != b.Comment {
+		return false
+	}
+	return true
+}
 func jDirIsEqual(a, b JdirType) bool {
-	if a.Description != b.Description {
+	if !jInfoIsEqual(a.Info, b.Info) {
 		return false
 	}
-	if a.MostAuthor != b.MostAuthor {
-		return false
-	}
-	if a.MostLocation != b.MostLocation {
-		return false
-	}
-	if a.MostLocation != b.MostLocation {
-		return false
-	}
-	if a.MostKeywords != b.MostKeywords {
-		return false
-	}
-	if a.MostComment != b.MostComment {
+	if !jInfoIsEqual(a.Most, b.Most) {
 		return false
 	}
 	if len(a.Files) != len(b.Files) {
 		return false
 	}
 	for i, af := range a.Files {
-		if af.Author != b.Files[i].Author {
-			return false
-		}
-		if af.Location != b.Files[i].Location {
-			return false
-		}
-		if af.Keywords != b.Files[i].Keywords {
-			return false
-		}
-		if af.Comment != b.Files[i].Comment {
+		if !jInfoIsEqual(af.Info, b.Files[i].Info) {
 			return false
 		}
 		if af.Name != b.Files[i].Name {
@@ -311,18 +308,18 @@ func updateByJpegValues(file *JfileType, fname string) {
 	j.Open(fname, false) // verbose=false
 	j.Decode()
 	s := strings.Split(j.Comment, "|")
-	file.Comment = j.Comment //v1|UTF-8|(c) Josef Chlachula|Rochester MN|home,astro|Northern lights
+	file.Info.Comment = j.Comment //v1|UTF-8|(c) Josef Chlachula|Rochester MN|home,astro|Northern lights
 	if len(s) > 2 {
-		file.Author = s[2]
+		file.Info.Author = s[2]
 	}
 	if len(s) > 3 {
-		file.Location = s[3]
+		file.Info.Location = s[3]
 	}
 	if len(s) > 4 {
-		file.Keywords = s[4]
+		file.Info.Keywords = s[4]
 	}
 	if len(s) > 5 {
-		file.Comment = s[5]
+		file.Info.Comment = s[5]
 	}
 	file.Thumbnail = j.Thumbnail
 	file.ThumbSrc = j.ThumbSrc
@@ -370,20 +367,18 @@ func makeJdir(dir string) (JdirType, error) {
 	var userData JdirType
 	var err error
 	jd.Files = make([]JfileType, 0)
-	jd.Description = "here could be a description from file " + defaultNameDashUserDataJson
-	jd.Author = "...author from " + defaultNameDashUserDataJson
-	jd.Location = "...location from " + defaultNameDashUserDataJson
-	jd.Keywords = "...keywords from " + defaultNameDashUserDataJson
-	jd.Comment = "...comment from " + defaultNameDashUserDataJson
+	jd.Info.Author = "...author from " + defaultNameDashUserDataJson
+	jd.Info.Location = "...location from " + defaultNameDashUserDataJson
+	jd.Info.Keywords = "...keywords from " + defaultNameDashUserDataJson
+	jd.Info.Comment = "...comment from " + defaultNameDashUserDataJson
 	userFile := filepath.Join(dir, defaultNameDashUserDataJson)
 	if FileExists(userFile) {
 		userData, err = readJsonDirData(userFile)
 		if err == nil {
-			jd.Description = userData.Description
-			jd.Author = userData.Author
-			jd.Location = userData.Location
-			jd.Keywords = userData.Keywords
-			jd.Comment = userData.Comment
+			jd.Info.Author = userData.Info.Author
+			jd.Info.Location = userData.Info.Location
+			jd.Info.Keywords = userData.Info.Keywords
+			jd.Info.Comment = userData.Info.Comment
 		} else {
 			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
 		}
@@ -408,10 +403,10 @@ func makeJdir(dir string) (JdirType, error) {
 			if isJpegFile(file.Name) {
 				updateByJpegValues(&file, filepath.Join(dir, file.Name))
 			}
-			authorCounter[file.Author]++
-			locationCounter[file.Location]++
-			keywordsCounter[file.Keywords]++
-			commentCounter[file.Comment]++
+			authorCounter[file.Info.Author]++
+			locationCounter[file.Info.Location]++
+			keywordsCounter[file.Info.Keywords]++
+			commentCounter[file.Info.Comment]++
 			jd.Files = append(jd.Files, file)
 		}
 	}
@@ -425,10 +420,10 @@ func makeJdir(dir string) (JdirType, error) {
 			jd.Dirs = append(jd.Dirs, d)
 		}
 	}
-	jd.MostAuthor, _ = mostOccurringString(authorCounter)
-	jd.MostLocation, _ = mostOccurringString(locationCounter)
-	jd.MostKeywords, _ = mostOccurringString(keywordsCounter)
-	jd.MostComment, _ = mostOccurringString(commentCounter)
+	jd.Most.Author, _ = mostOccurringString(authorCounter)
+	jd.Most.Location, _ = mostOccurringString(locationCounter)
+	jd.Most.Keywords, _ = mostOccurringString(keywordsCounter)
+	jd.Most.Comment, _ = mostOccurringString(commentCounter)
 	return jd, nil
 }
 
