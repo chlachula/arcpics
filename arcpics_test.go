@@ -376,7 +376,11 @@ func TestLabelMountsType(t *testing.T) {
 	if want != got {
 		t.Errorf("5. error %s - want: %s; got: %s ", fn, want, got)
 	}
-	want = os.Getenv("PWD") + "/" + "example/Arc-Pics"
+	sep := "/"
+	if runtime.GOOS == "windows" {
+		sep = "\\"
+	}
+	want = os.Getenv("PWD") + sep + "example" + sep + "Arc-Pics"
 	MountLabeledDirectory("example/Arc-Pics")
 	got = LabelMounts.Get("TEST")
 	if want != got {
