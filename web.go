@@ -692,12 +692,28 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\n<br/>\n")
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
 }
+func isDriveLetterAvailable(ch byte) bool {
+	root := string(ch) + ":\\"
+	if _, err := os.Stat(root); err == nil {
+		return true
+	}
+	return false
+}
+func winAvailableLetterDrives() []string {
+	letters := make([]string, 0)
+	for ch := 'A'; ch <= 'Z'; ch++ {
+		if isDriveLetterAvailable(byte(ch)) {
+			letters = append(letters, string(ch)+":")
+		}
+	}
+	return letters
+}
+
 func RootMountDirs() []string {
 	s := make([]string, 0)
 	user := os.Getenv("USER")
 	if runtime.GOOS == "windows" {
-		s = append(s, "C:\\")
-		// https://stackoverflow.com/questions/286534/enumerating-all-available-drive-letters-in-windows
+		s = winAvailableLetterDrives()
 	} else {
 		s = append(s, "/")
 		s = append(s, "/media/"+user)
