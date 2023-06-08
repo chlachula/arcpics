@@ -692,18 +692,11 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\n<br/>\n")
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
 }
-func isDriveLetterAvailable(ch byte) bool {
-	root := string(ch) + ":\\"
-	if _, err := os.Stat(root); err == nil {
-		return true
-	}
-	return false
-}
-func winAvailableLetterDrives() []string {
-	letters := make([]string, 0)
+func WinAvailableLetterDrives() (letters []string) {
 	for ch := 'A'; ch <= 'Z'; ch++ {
-		if isDriveLetterAvailable(byte(ch)) {
-			letters = append(letters, string(ch)+":")
+		d := string(ch) + ":"
+		if _, err := os.Stat(d + "\\"); err == nil {
+			letters = append(letters, d)
 		}
 	}
 	return letters
@@ -713,7 +706,7 @@ func RootMountDirs() []string {
 	s := make([]string, 0)
 	user := os.Getenv("USER")
 	if runtime.GOOS == "windows" {
-		s = winAvailableLetterDrives()
+		s = WinAvailableLetterDrives()
 	} else {
 		s = append(s, "/")
 		s = append(s, "/media/"+user)
