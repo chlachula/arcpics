@@ -157,8 +157,16 @@ func pageBeginning(title string) string {
 	console.log("mount label 2 "+globalLabel+":"+fileselector.value)
 	alert("mount label 2 "+globalLabel+":"+fileselector.value)
   }
+  function tBtnSave() {
+	var eA = document.getElementById( 'tInfi'+'Author');
+	var eL = document.getElementById( 'tInfi'+'Location');
+	var eK = document.getElementById( 'tInfi'+'Keywords');
+	var eC = document.getElementById( 'tInfi'+'Comment');
+	document.getElementById("UpdateDirForm").submit();
+	console.log("Author:"+eA.value+", Location:"+eL.value)
+  }
   function tBtn(name) {
-	var id = 'tInfs'+name;
+		var id = 'tInfs'+name;
 	var es = document.getElementById(id);
 	if (es.style.display == "none") {
 		es.style.display = "inline"
@@ -638,24 +646,31 @@ func lastDir(path string) string {
 	}
 	return s[len(s)-1]
 }
+func tBtnSave() string {
+	return `<input type="button" value="Save" onclick="tBtnSave('')" title="Press to edit"/>`
+}
 func tBtn(name string) string {
 	return fmt.Sprintf(`<input type="button" value="%s" onclick="tBtn('%s')" title="Press to edit"/>`, name, name)
 }
 func tInf(name, value string) string {
-	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" style="display:none;background-color:#FFFACD;"/>`, name, value, value, name)
+	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" name="%s" style="display:none;background-color:#FFFACD;"/>`, name, value, value, name, name)
 }
-func infoTable(inf JinfoType) string {
-	f := `<table bgcolor="gray"><caption>Directory info</caption>
+func infoTable(inf JinfoType, urlPath string) string {
+	f := `<form id="UpdateDirForm" action="%s" method="put">
+<table bgcolor="gray"><caption>Directory info &nbsp; &nbsp; %s</caption>
  <tbody>
  <tr bgcolor="white"><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>
  <tr bgcolor="white"><td><span>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>
  </tbody>
-</table>`
+</table>
+</form>`
 	A := "Author"
 	L := "Location"
 	K := "Keywords"
 	C := "Comment"
 	return fmt.Sprintf(f,
+		urlPath,
+		tBtnSave(),
 		tBtn(A), tBtn(L), tBtn(K), tBtn(C),
 		tInf(A, inf.Author), tInf(L, inf.Location), tInf(K, inf.Keywords), tInf(C, inf.Comment))
 }
@@ -672,6 +687,9 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	var val string
 	var parentVal string
 	if err == nil {
+		if r.Method == http.MethodPut {
+			_ = PutDbValueHttpReqDir(db, FILES_BUCKET, path, r)
+		}
 		val = GetDbValue(db, FILES_BUCKET, path)
 		parentDir, _ := getParentDir(path)
 		parentVal = GetDbValue(db, FILES_BUCKET, parentDir)
@@ -696,7 +714,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
-	fmt.Fprint(w, infoTable(jd.Most))
+	fmt.Fprint(w, infoTable(jd.Most, r.URL.Path))
 	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
 	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"

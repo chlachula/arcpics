@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -165,6 +166,13 @@ func DbLabel(archiveDir string) (string, error) {
 		return label, fmt.Errorf("there is not at least one character label after dot 'arcpics-db-label.'")
 	}
 	return label, nil
+}
+
+func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, r *http.Request) error {
+	var err error
+	key := []byte(keyStr)
+	_ = key
+	return err
 }
 
 func PutDbValue(db *bolt.DB, bucket []byte, key, value string) error {
