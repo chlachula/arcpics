@@ -159,20 +159,21 @@ func pageBeginning(title string) string {
   }
   function tBtn(name) {
 	var id = 'tInfs'+name;
-	var e = document.getElementById(id);
-	if (e.style.display == "none") {
-		e.style.display = "inline"
+	var es = document.getElementById(id);
+	if (es.style.display == "none") {
+		es.style.display = "inline"
 	} else {
-		e.style.display = "none"
+		es.style.display = "none"
 	}
 
 	id = 'tInfi'+name;
-	var e = document.getElementById(id);
-	if (e.style.display == "none") {
-		e.style.display = "inline"
+	var ei = document.getElementById(id);
+	if (ei.style.display == "none") {
+		ei.style.display = "inline"
 	} else {
-		e.style.display = "none"
+		ei.style.display = "none"
 	}
+	es.innerHTML = ei.value;
   }
  </script>
 </head>
@@ -641,7 +642,7 @@ func tBtn(name string) string {
 	return fmt.Sprintf(`<input type="button" value="%s" onclick="tBtn('%s')" title="Press to edit"/>`, name, name)
 }
 func tInf(name, value string) string {
-	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" style="display:none"/>`, name, value, value, name)
+	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" style="display:none;background-color:#FFFACD;"/>`, name, value, value, name)
 }
 func infoTable(inf JinfoType) string {
 	f := `<table bgcolor="gray"><caption>Directory info</caption>
