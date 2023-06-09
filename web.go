@@ -157,6 +157,23 @@ func pageBeginning(title string) string {
 	console.log("mount label 2 "+globalLabel+":"+fileselector.value)
 	alert("mount label 2 "+globalLabel+":"+fileselector.value)
   }
+  function tBtn(name) {
+	var id = 'tInfs'+name;
+	var e = document.getElementById(id);
+	if (e.style.display == "none") {
+		e.style.display = "inline"
+	} else {
+		e.style.display = "none"
+	}
+
+	id = 'tInfi'+name;
+	var e = document.getElementById(id);
+	if (e.style.display == "none") {
+		e.style.display = "inline"
+	} else {
+		e.style.display = "none"
+	}
+  }
  </script>
 </head>
 <body style="text-align:left"><a name="top"></a>
@@ -620,6 +637,27 @@ func lastDir(path string) string {
 	}
 	return s[len(s)-1]
 }
+func tBtn(name string) string {
+	return fmt.Sprintf(`<input type="button" value="%s" onclick="tBtn('%s')" title="Press to edit"/>`, name, name)
+}
+func tInf(name, value string) string {
+	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" style="display:none"/>`, name, value, value, name)
+}
+func infoTable(inf JinfoType) string {
+	f := `<table bgcolor="gray"><caption>Directory info</caption>
+ <tbody>
+ <tr bgcolor="white"><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>
+ <tr bgcolor="white"><td><span>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>
+ </tbody>
+</table>`
+	A := "Author"
+	L := "Location"
+	K := "Keywords"
+	C := "Comment"
+	return fmt.Sprintf(f,
+		tBtn(A), tBtn(L), tBtn(K), tBtn(C),
+		tInf(A, inf.Author), tInf(L, inf.Location), tInf(K, inf.Keywords), tInf(C, inf.Comment))
+}
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
@@ -650,12 +688,14 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s %s<hr/>\n"
+
 	comments := ""
 	if jd.Most.Comment != "" {
 		comments = "most comments: " + jd.Most.Comment
 	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
+	fmt.Fprint(w, infoTable(jd.Most))
 	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
 	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"
@@ -715,7 +755,7 @@ func RootMountDirs() []string {
 	return s
 }
 
-// function similar to getLabel maybe should be found common ground
+// func similar to getLabel maybe should be found common ground
 func findLabel(dir string) string {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
