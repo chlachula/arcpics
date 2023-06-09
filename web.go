@@ -656,6 +656,9 @@ func tInf(name, value string) string {
 	return fmt.Sprintf(`<span id="tInfs%s">%s</span><input type="text" value="%s" id="tInfi%s" name="%s" style="display:none;background-color:#FFFACD;"/>`, name, value, value, name, name)
 }
 func infoTable(inf JinfoType, urlPath string) string {
+	if inf.Author == "" && inf.Location == "" && inf.Keywords == "" && inf.Comment == "" {
+		return "\n<!--no form, no table-->\n"
+	}
 	f := `<form id="UpdateDirForm" action="%s" method="put">
 <table bgcolor="gray"><caption>Directory info &nbsp; &nbsp; %s</caption>
  <tbody>
@@ -706,15 +709,11 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s %s<hr/>\n"
+	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s<hr/>\n"
 
-	comments := ""
-	if jd.Most.Comment != "" {
-		comments = "most comments: " + jd.Most.Comment
-	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
-	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, comments)
-	fmt.Fprint(w, infoTable(jd.Most, r.URL.Path))
+	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext)
+	fmt.Fprint(w, infoTable(jd.Info, r.URL.Path))
 	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
 	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"
@@ -749,7 +748,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	fmt.Fprint(w, "\n<br/>\n")
-	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
+	fmt.Fprintf(w, "<hr/>Label: %s\n%s(path: %s)%s - %s\n", label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
 }
 func WinAvailableLetterDrives() (letters []string) {
 	for ch := 'A'; ch <= 'Z'; ch++ {

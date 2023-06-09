@@ -1,4 +1,6 @@
 {
-  "Description": "My folder specific description",
-  "Location": "My secret location"
+ "Info": {
+  "Author": "Joe Doe",
+  "Location": "Secret location"
+ }
 }

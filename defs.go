@@ -71,11 +71,11 @@ type JfileType = struct {
 	ThumbSrc  string    `json:",omitempty"`
 }
 type JdirType = struct {
-	Info  JinfoType   `json:",omitempty"`
-	Most  JinfoType   `json:",omitempty"`
-	Skip  []string    `json:",omitempty"`
-	Files []JfileType `json:",omitempty"`
-	Dirs  []string    `json:",omitempty"`
+	UpdateTime string      `json:",omitempty"`
+	Info       JinfoType   `json:",omitempty"`
+	Skip       []string    `json:",omitempty"`
+	Files      []JfileType `json:",omitempty"`
+	Dirs       []string    `json:",omitempty"`
 }
 type FrequencyCounterType map[string]int
 type LabelMountsType map[string]string

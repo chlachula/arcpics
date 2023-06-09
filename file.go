@@ -173,7 +173,7 @@ func jDirIsEqual(a, b JdirType) bool {
 	if !jInfoIsEqual(a.Info, b.Info) {
 		return false
 	}
-	if !jInfoIsEqual(a.Most, b.Most) {
+	if !jInfoIsEqual(a.Info, b.Info) {
 		return false
 	}
 	if len(a.Files) != len(b.Files) {
@@ -362,27 +362,12 @@ func mostOccurringString(counter map[string]int) (string, string) {
 	}
 	return kMax, fmt.Sprintf("%d/%d", vMax, sum)
 }
+
 func makeJdir(dir string) (JdirType, error) {
 	var jd JdirType
 	var userData JdirType
 	var err error
 	jd.Files = make([]JfileType, 0)
-	jd.Info.Author = "...author from " + defaultNameDashUserDataJson
-	jd.Info.Location = "...location from " + defaultNameDashUserDataJson
-	jd.Info.Keywords = "...keywords from " + defaultNameDashUserDataJson
-	jd.Info.Comment = "...comment from " + defaultNameDashUserDataJson
-	userFile := filepath.Join(dir, defaultNameDashUserDataJson)
-	if FileExists(userFile) {
-		userData, err = readJsonDirData(userFile)
-		if err == nil {
-			jd.Info.Author = userData.Info.Author
-			jd.Info.Location = userData.Info.Location
-			jd.Info.Keywords = userData.Info.Keywords
-			jd.Info.Comment = userData.Info.Comment
-		} else {
-			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
-		}
-	}
 
 	var files []fs.DirEntry
 	if files, err = filesInDir(dir); err != nil {
@@ -420,10 +405,27 @@ func makeJdir(dir string) (JdirType, error) {
 			jd.Dirs = append(jd.Dirs, d)
 		}
 	}
-	jd.Most.Author, _ = mostOccurringString(authorCounter)
-	jd.Most.Location, _ = mostOccurringString(locationCounter)
-	jd.Most.Keywords, _ = mostOccurringString(keywordsCounter)
-	jd.Most.Comment, _ = mostOccurringString(commentCounter)
+
+	userFile := filepath.Join(dir, defaultNameDashUserDataJson)
+	if FileExists(userFile) {
+		userData, err = readJsonDirData(userFile)
+		if err == nil {
+			jd.Info.Author = userData.Info.Author
+			jd.Info.Location = userData.Info.Location
+			jd.Info.Keywords = userData.Info.Keywords
+			jd.Info.Comment = userData.Info.Comment
+		} else {
+			fmt.Printf("error in the file %s\n %s\n", userFile, err.Error())
+		}
+	} else {
+		jd.Info.Author, _ = mostOccurringString(authorCounter)
+		jd.Info.Location, _ = mostOccurringString(locationCounter)
+		jd.Info.Keywords, _ = mostOccurringString(keywordsCounter)
+		jd.Info.Comment, _ = mostOccurringString(commentCounter)
+	}
+	if jd.UpdateTime == "" {
+		jd.UpdateTime = time.Now().Format(time.DateTime)
+	}
 	return jd, nil
 }
 

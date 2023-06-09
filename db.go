@@ -123,12 +123,12 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 			if jd, err = makeJdir(path); err != nil {
 				return err
 			}
-			m["author"][jd.Most.Author]++
-			m["location"][jd.Most.Location]++
-			for _, k := range getCsvKeywords(jd.Most.Keywords) {
+			m["author"][jd.Info.Author]++
+			m["location"][jd.Info.Location]++
+			for _, k := range getCsvKeywords(jd.Info.Keywords) {
 				m["keywords"][k]++
 			}
-			m["comment"][jd.Most.Comment]++
+			m["comment"][jd.Info.Comment]++
 
 			countFiles += len(jd.Files)
 			for _, f := range jd.Files {
@@ -206,12 +206,12 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 			}
 			var jd JdirType
 			json.Unmarshal(bytes, &jd)
-			m["author"][jd.Most.Author]++
-			m["location"][jd.Most.Location]++
-			for _, k := range getCsvKeywords(jd.Most.Keywords) {
+			m["author"][jd.Info.Author]++
+			m["location"][jd.Info.Location]++
+			for _, k := range getCsvKeywords(jd.Info.Keywords) {
 				m["keywords"][k]++
 			}
-			m["comment"][jd.Most.Comment]++
+			m["comment"][jd.Info.Comment]++
 
 			db.Update(func(tx *bolt.Tx) error {
 				b := tx.Bucket(FILES_BUCKET)
@@ -239,7 +239,7 @@ func ArcpicsDatabaseUpdate(db *bolt.DB, arcFS ArcpicsFS) error {
 	return nil
 }
 func jdOkArgs(jd JdirType, author, location, kw, comment string) bool {
-	if jdOk(jd.Most.Author, author) && jdOk(jd.Most.Location, location) && jdOk(jd.Most.Keywords, kw) && jdOk(jd.Most.Comment, comment) {
+	if jdOk(jd.Info.Author, author) && jdOk(jd.Info.Location, location) && jdOk(jd.Info.Keywords, kw) && jdOk(jd.Info.Comment, comment) {
 		return true
 	}
 	return false
@@ -328,7 +328,7 @@ func ArcpicsWordFrequency(db *bolt.DB) {
 			var jDir JdirType
 			err := json.Unmarshal(v, &jDir)
 			if err == nil {
-				s := strings.Replace(jDir.Most.Comment, "|", " ", -1)
+				s := strings.Replace(jDir.Info.Comment, "|", " ", -1)
 				s = strings.Replace(s, ",", " ", -1)
 				s = strings.Replace(s, ";", " ", -1)
 				s = strings.Replace(s, ":", " ", -1)
