@@ -629,10 +629,10 @@ func prevNextPathLinks(val string, dirName string) (string, string) {
 	for i, d := range jd.Dirs {
 		if d == dirName {
 			if i-1 >= 0 {
-				prevLink = fmt.Sprintf(fmtStr, jd.Dirs[i-1], "&lt;-")
+				prevLink = fmt.Sprintf(fmtStr, jd.Dirs[i-1], "&#x21D0; - ")
 			}
 			if i+1 < len(jd.Dirs) {
-				nextLink = fmt.Sprintf(fmtStr, jd.Dirs[i+1], "-&gt;")
+				nextLink = fmt.Sprintf(fmtStr, jd.Dirs[i+1], " - &#x21D2;")
 			}
 			break
 		}
@@ -748,7 +748,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	fmt.Fprint(w, "\n<br/>\n")
-	fmt.Fprintf(w, "<hr/>Label: %s\n%s(path: %s)%s - %s\n", label, linkPrev, path, linkNext, " <a href=\"#top\">top</a>")
+	fmt.Fprintf(w, "<hr/>Label: %s\n%s(path: %s)%s - %s\n", label, linkPrev, path, linkNext, " <a href=\"#top\">&#x21D1; top</a>")
 }
 func WinAvailableLetterDrives() (letters []string) {
 	for ch := 'A'; ch <= 'Z'; ch++ {
