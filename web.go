@@ -162,8 +162,11 @@ func pageBeginning(title string) string {
 	var eL = document.getElementById( 'tInfi'+'Location');
 	var eK = document.getElementById( 'tInfi'+'Keywords');
 	var eC = document.getElementById( 'tInfi'+'Comment');
-	document.getElementById("UpdateDirForm").submit();
-	console.log("Author:"+eA.value+", Location:"+eL.value)
+	var form = document.getElementById("UpdateDirForm");
+	form.method = "PUT";
+	alert("Author:"+eA.value+", Location:"+eL.value+", form action="+form.action+",method="+form.method)
+	console.log("Author:"+eA.value+", Location:"+eL.value+", form action="+form.action)
+	form.submit();
   }
   function tBtn(name) {
 		var id = 'tInfs'+name;
@@ -647,7 +650,7 @@ func lastDir(path string) string {
 	return s[len(s)-1]
 }
 func tBtnSave() string {
-	return `<input type="button" value="Save" onclick="tBtnSave('')" title="Press to edit"/>`
+	return `<input type="submit" value="Save" xxonclick="tBtnSave('')" title="Press to edit"/>`
 }
 func tBtn(name string) string {
 	return fmt.Sprintf(`<input type="button" value="%s" onclick="tBtn('%s')" title="Press to edit"/>`, name, name)
@@ -659,7 +662,7 @@ func infoTable(inf JinfoType, urlPath string) string {
 	if inf.Author == "" && inf.Location == "" && inf.Keywords == "" && inf.Comment == "" {
 		return "\n<!--no form, no table-->\n"
 	}
-	f := `<form id="UpdateDirForm" action="%s" method="put">
+	f := `<form id="UpdateDirForm" action="%s" method="post">
 <table bgcolor="gray"><caption>Directory info &nbsp; &nbsp; %s</caption>
  <tbody>
  <tr bgcolor="white"><th>%s</th><th>%s</th><th>%s</th><th>%s</th></tr>
@@ -690,7 +693,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	var val string
 	var parentVal string
 	if err == nil {
-		if r.Method == http.MethodPut {
+		if r.Method == http.MethodPost {
 			_ = PutDbValueHttpReqDir(db, FILES_BUCKET, path, r)
 		}
 		val = GetDbValue(db, FILES_BUCKET, path)

@@ -172,6 +172,16 @@ func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, r *http.Req
 	var err error
 	key := []byte(keyStr)
 	_ = key
+	if err := r.ParseForm(); err != nil {
+		return err
+	}
+	var inf JinfoType
+	inf.Author = r.FormValue("Author")
+	inf.Location = r.FormValue("Location")
+	inf.Keywords = r.FormValue("Keywords")
+	inf.Comment = r.FormValue("Comment")
+	fmt.Printf("Post from website! author = %v\n", inf)
+
 	return err
 }
 
