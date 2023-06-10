@@ -693,9 +693,6 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	var val string
 	var parentVal string
 	if err == nil {
-		if r.Method == http.MethodPost {
-			_ = PutDbValueHttpReqDir(db, FILES_BUCKET, path, r)
-		}
 		val = GetDbValue(db, FILES_BUCKET, path)
 		parentDir, _ := getParentDir(path)
 		parentVal = GetDbValue(db, FILES_BUCKET, parentDir)
@@ -710,6 +707,9 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		lblfmt := "<h2>Arcpics Label: %s</h2>\npath: %s <hr/>\nerror: %s\n"
 		fmt.Fprintf(w, lblfmt, label, path, err.Error())
 		return
+	}
+	if r.Method == http.MethodPost {
+		_ = PutDbValueHttpReqDir(db, FILES_BUCKET, path, &jd, r)
 	}
 
 	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s<hr/>\n"

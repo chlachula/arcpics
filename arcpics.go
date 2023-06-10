@@ -1,6 +1,7 @@
 package arcpics
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -168,7 +169,7 @@ func DbLabel(archiveDir string) (string, error) {
 	return label, nil
 }
 
-func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, r *http.Request) error {
+func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, jd *JdirType, r *http.Request) error {
 	var err error
 	key := []byte(keyStr)
 	_ = key
@@ -180,8 +181,14 @@ func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, r *http.Req
 	inf.Location = r.FormValue("Location")
 	inf.Keywords = r.FormValue("Keywords")
 	inf.Comment = r.FormValue("Comment")
-	fmt.Printf("Post from website! author = %v\n", inf)
 
+	jd.Info = inf
+	jdBytes, err := json.Marshal(jd)
+	//var jdBytes []byte = []byte(b)
+	PutDbValue(db, bucket, keyStr, string(jdBytes))
+	if err != nil {
+		fmt.Printf("PutDbValueHttpReqDir Error %s\n", err.Error())
+	}
 	return err
 }
 
