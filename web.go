@@ -720,6 +720,12 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodPost {
+		//update changed dir info into the same file info
+		for _, f := range jd.Files {
+			if jInfoIsEqual(jd.Info, f.Info) {
+				f.Info = inf
+			}
+		}
 		jd.Info = inf
 		if err = PutDbValueHttpReqDir(db, FILES_BUCKET, path, &jd); err != nil {
 			fmt.Fprintf(w, fmtErr, label, path, err.Error())
