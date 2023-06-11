@@ -231,7 +231,11 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 		}
 		insertNewBucket(db, FILES_BUCKET)  // insert FILES bucket just once
 		insertNewBucket(db, MOUNTS_BUCKET) // insert MOUNTD bucket just once
-		insert2MountDirNow(db, picturesDirName)
+		mountDir := picturesDirName
+		if mountDir, err = filepath.Abs(picturesDirName); err != nil {
+			fmt.Printf("error making abs mountDir: %s\n", err.Error())
+		}
+		insert2MountDirNow(db, mountDir)
 	}
 	picturesDirName = strings.TrimSuffix(picturesDirName, "/")
 	arcFS, err = OpenArcpicsFS(picturesDirName)
