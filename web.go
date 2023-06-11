@@ -687,8 +687,20 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	if path == "" {
 		path = "./"
 	}
-	//	myUrl, _ := url.Parse(r.RequestURI)
-	//	urlParams, _ := url.ParseQuery(myUrl.RawQuery)
+	var inf JinfoType
+	fmtErr := "<h2>Arcpics Label: %s</h2>\npath: %s <hr/>\nerror: %s\n"
+	// parsing request body needs to be done before timeout
+	if r.Method == http.MethodPost {
+		if err := r.ParseForm(); err != nil {
+			fmt.Fprintf(w, fmtErr, label, path, err.Error())
+			return
+		}
+		inf.Author = r.FormValue("Author")
+		inf.Location = r.FormValue("Location")
+		inf.Keywords = r.FormValue("Keywords")
+		inf.Comment = r.FormValue("Comment")
+	}
+
 	db, err := LabeledDatabase(label)
 	var val string
 	var parentVal string
@@ -704,17 +716,19 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, webMenu(""))
 	var jd JdirType
 	if err = json.Unmarshal([]byte(val), &jd); err != nil {
-		lblfmt := "<h2>Arcpics Label: %s</h2>\npath: %s <hr/>\nerror: %s\n"
-		fmt.Fprintf(w, lblfmt, label, path, err.Error())
+		fmt.Fprintf(w, fmtErr, label, path, err.Error())
 		return
 	}
 	if r.Method == http.MethodPost {
-		_ = PutDbValueHttpReqDir(db, FILES_BUCKET, path, &jd, r)
+		jd.Info = inf
+		if err = PutDbValueHttpReqDir(db, FILES_BUCKET, path, &jd); err != nil {
+			fmt.Fprintf(w, fmtErr, label, path, err.Error())
+			return
+		}
 	}
 
-	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s<hr/>\n"
-
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
+	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s<hr/>\n"
 	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext)
 	fmt.Fprint(w, infoTable(jd.Info, r.URL.Path))
 	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -169,25 +168,16 @@ func DbLabel(archiveDir string) (string, error) {
 	return label, nil
 }
 
-func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, jd *JdirType, r *http.Request) error {
+func PutDbValueHttpReqDir(db *bolt.DB, bucket []byte, keyStr string, jd *JdirType) error {
 	var err error
-	key := []byte(keyStr)
-	_ = key
-	if err := r.ParseForm(); err != nil {
+	var jdBytes []byte
+	jdBytes, err = json.Marshal(jd)
+	if err != nil {
 		return err
 	}
-	var inf JinfoType
-	inf.Author = r.FormValue("Author")
-	inf.Location = r.FormValue("Location")
-	inf.Keywords = r.FormValue("Keywords")
-	inf.Comment = r.FormValue("Comment")
-
-	jd.Info = inf
-	jdBytes, err := json.Marshal(jd)
-	//var jdBytes []byte = []byte(b)
-	PutDbValue(db, bucket, keyStr, string(jdBytes))
+	err = PutDbValue(db, bucket, keyStr, string(jdBytes))
 	if err != nil {
-		fmt.Printf("PutDbValueHttpReqDir Error %s\n", err.Error())
+		return err
 	}
 	return err
 }
