@@ -10,6 +10,7 @@ arcpics: Manage archived pictures not only at external hard drives.
 </p>
 
 **Executable binaries to download**
+<a name="download"></a>
 <table>
 <tr><th>GOOS</th><th>GOARCH</th><th>Binary</th></tr>
 <tr><td>windows</td><td>amd64</td><td><a href="binary/arcpics-windows-amd64.exe">arcpics-windows-amd64.exe</a></td></tr>
