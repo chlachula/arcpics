@@ -8,3 +8,14 @@ arcpics: Manage archived pictures not only at external hard drives.
 </a>
 
 </p>
+
+**Executable binaries to download**
+<table>
+<tr><th>GOOS</th><th>GOARCH</th><th>Binary</th></tr>
+<tr><td>windows</td><td>amd64</td><td><a href="binary/arcpics-windows-amd64.exe">arcpics-windows-amd64.exe</a></td></tr>
+<tr><td>linux</td><td>amd64</td><td><a href="binary/arcpics-linux-amd64">arcpics-linux-amd64</a></td></tr>
+<tr><td>darwin</td><td>amd64</td><td><a href="binary/arcpics-darwin-amd64">arcpics-darwin-amd64</a></td></tr>
+</table>
+
+***
+[Written with Markdown](https://www.markdownguide.org/basic-syntax/)
