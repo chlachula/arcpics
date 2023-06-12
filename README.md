@@ -9,7 +9,7 @@ arcpics: Manage archived pictures not only at external hard drives.
 
 </p>
 
-**Executable binaries to download**
+<strong>Executable binaries to <a href="#download">download</a></strong>
 <a name="download"></a>
 <table>
 <tr><th>GOOS</th><th>GOARCH</th><th>Binary</th></tr>
