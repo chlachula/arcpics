@@ -410,6 +410,7 @@ func makeJdir(dir string) (JdirType, error) {
 	if FileExists(userFile) {
 		userData, err = readJsonDirData(userFile)
 		if err == nil {
+			jd.ByUser = true
 			jd.Info.Author = userData.Info.Author
 			jd.Info.Location = userData.Info.Location
 			jd.Info.Keywords = userData.Info.Keywords

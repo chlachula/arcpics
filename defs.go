@@ -72,6 +72,7 @@ type JfileType = struct {
 }
 type JdirType = struct {
 	UpdateTime string      `json:",omitempty"`
+	ByUser     bool        `json:",omitempty"`
 	Info       JinfoType   `json:",omitempty"`
 	Skip       []string    `json:",omitempty"`
 	Files      []JfileType `json:",omitempty"`
