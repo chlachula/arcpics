@@ -109,8 +109,12 @@ func pageBeginning(title string) string {
   var mountWindow
   var myWindow;
 
-function openWin(url) {
-  myWindow = window.open(url, "", "width=1200,height=800");
+function openWin(url, title) {
+	var w = 1200;
+	var h = 800;
+	var left = (screen.width/2)-(w/2);
+	var top = (screen.height/2)-(h/2);
+	myWindow = window.open(url, title, 'toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width='+w+', height='+h+', top='+top+', left='+left);
 }
 
 function closeWin() {
@@ -775,7 +779,8 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" title="%s"/>`, label, path, f.Name, title)
 			if mountDir != "" {
 				//fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
-				fmt.Fprintf(w, `<span onclick="openWin('/image/%s/%s/%s')">%s</span>%s`, mountDir, path, f.Name, img, "\n")
+				title := "Title: " + f.Name + ": " + f.Info.Author + "|" + f.Info.Keywords + "|" + f.Info.Location + "|" + f.Info.Comment
+				fmt.Fprintf(w, `<span onclick="openWin('/image/%s/%s/%s','%s')">%s</span>%s`, mountDir, path, f.Name, title, img, "\n")
 			} else {
 				fmt.Fprintf(w, `%s%s`, img, "\n")
 			}

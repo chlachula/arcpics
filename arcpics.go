@@ -235,6 +235,7 @@ func AssignPicturesDirectoryWithDatabase(varArgs ...string) (ArcpicsFS, *bolt.DB
 		if mountDir, err = filepath.Abs(picturesDirName); err != nil {
 			fmt.Printf("error making abs mountDir: %s\n", err.Error())
 		}
+		mountDir = strings.ReplaceAll(mountDir, "\\", "/")
 		insert2MountDirNow(db, mountDir)
 	}
 	picturesDirName = strings.TrimSuffix(picturesDirName, "/")

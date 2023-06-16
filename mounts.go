@@ -3,6 +3,7 @@ package arcpics
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 func (lm *LabelMountsType) Set(label string, value string) {
@@ -37,7 +38,7 @@ func MountLabeledDirectory(dir string) error {
 	if err != nil {
 		fmt.Printf("error at MountLabeledDirectory converting to abs path dir: '%s'", dir)
 	}
-
+	absDir = strings.ReplaceAll(absDir, "\\", "/")
 	LabelMounts.Set(label, absDir)
 	return nil
 }
