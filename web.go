@@ -727,6 +727,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		jd.Info = inf
+		jd.ByUser = true
 		if err = PutDbValueHttpReqDir(db, FILES_BUCKET, path, &jd); err != nil {
 			fmt.Fprintf(w, fmtErr, label, path, err.Error())
 			return
