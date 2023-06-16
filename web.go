@@ -107,6 +107,15 @@ func pageBeginning(title string) string {
 <script>
   var globalLabel = "GlobalLabelNotSet"
   var mountWindow
+  var myWindow;
+
+function openWin(url) {
+  myWindow = window.open(url, "", "width=1200,height=800");
+}
+
+function closeWin() {
+  myWindow.close();
+}
 
   function checkShowHide(chk, id) {
 	var checkBox = document.getElementById(chk);
@@ -765,7 +774,8 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 			}
 			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" title="%s"/>`, label, path, f.Name, title)
 			if mountDir != "" {
-				fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
+				//fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
+				fmt.Fprintf(w, `<span onclick="openWin('/image/%s/%s/%s')">%s</span>%s`, mountDir, path, f.Name, img, "\n")
 			} else {
 				fmt.Fprintf(w, `%s%s`, img, "\n")
 			}
