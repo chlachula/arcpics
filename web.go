@@ -82,7 +82,7 @@ func route(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func pageBeginning(title string) string {
+func pageBeginning(title, jsFiles string) string {
 	htmlPage := `<html><head>  <title>%s</title>
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/arcpics/main/cmd/favicon-Arc-bw-32.ico">	
@@ -108,7 +108,7 @@ func pageBeginning(title string) string {
   var globalLabel = "GlobalLabelNotSet"
   var mountWindow
   var myWindow;
-
+  %s
 function openWin(url, title) {
 	var w = 1200;
 	var h = 800;
@@ -204,7 +204,7 @@ function closeWin() {
 <body style="text-align:left"><a name="top"></a>
 <input id="fileselector" type="file" onchange="mountLabelSet(event)" webkitdirectory directory multiple="false" style="display:none" />
 `
-	return fmt.Sprintf(htmlPage, title)
+	return fmt.Sprintf(htmlPage, title, jsFiles)
 }
 func webSearch0(labelsOnly bool) string {
 	format := `&nbsp; <form action="/search" method="get" style="display: inline;">
@@ -403,7 +403,7 @@ func getSearchLabels(query string) string {
 	return m["Labels"]
 }
 func pageHome(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, pageBeginning("Arcpics home"))
+	fmt.Fprint(w, pageBeginning("Arcpics home", ""))
 	fmt.Fprint(w, webMenu("/"))
 	fmt.Fprint(w, "<h1>Arcpics - labeled external archives management for pictures and another files</h1>\n")
 	imgSrc := "https://lh3.googleusercontent.com/3O6QhFBHS9tb6U-Guk_cGUBYQTKmzBBd8Z3ldi7fK4d-gRiiQxYPvnCmKnDTB3IU86MbY0yw-jIaZhg62vaTajouUYlhqG0AzoSV-UJ74o4ewdWtB51CQKlgTaKQjTftDJiUV-tBa8j3cuPL4XlbHagABnBzTu4JdJ5P8FHgn7TqJSRYENYwAZIg60NQmi6OnGqDSElr30Aeghz7_aQ9mAqtb5c4aqxfiJSTuqbZQuwvtBDMifRCoS2WX9jgyc2W2hh7gFYGOn9xLKVvnns9q5xlg97QSYTmkpQW3DYe7QgQc7uKJe_6yQ-xG2Nw7F5k4yxsZiLJ9EA6vhmIL3OAuu9dbi9AxhYKlZ3yVhjncZajM2e3qdGoFFMnc8klBx191xqFyOEDpgX6c2YCmn_SJ-HcOmlo-v_1Uk5f7Mre4_-nK4BOlSHjmx7Ojur3ERpnLbWgQNJ09Sz6-uo58oBW-V8cIgwCes9fo97PBVzUQjBeoncZ2sa76sR_AQQfKOl2nnsQ2Ez6UI73r1S__A6cDRQhy4cFOIGg9P4FbUrx0UDJAoDswfD7h3w3tl6ASY2FB8ogyDrDEfnrh-XItzQL-VU21uuSiCaQYXTpetgXSAr-jifsTd4Xh5eJ2iiL3rCH21aJh_Gl_7pYfl2g6P82T0xdt-r2hXT6CFp5dvpBZGA1jQ1ZpoKwDN4J0n9NCBfnuZscn5Wopst3ABKF94NBMI-nV1bSye-zLOjNC0qUVQWreu8qr1yUy_FkKl6gKcVMGIv3G-rR1NNpD2LGyjln2PqDeviZFTxGCjfhDOjr1t75mGUAkgAk4iC5dYv-S1iCAB8rC1HeY0dT-IZltLljS5oTrBwsXIjyF2_syrnhyiD4srdX370mQoe5Jemoa2rlSKz13cvCJm0GWq2v5YOBzKwE_lVrz405r-x0oZYm58ZWioC4kQ=w1307-h980-s-no?authuser=0"
@@ -415,7 +415,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	glob_searchLocation = r.URL.Query().Get("na_location")
 	glob_searchKeywords = r.URL.Query().Get("na_keywords")
 	glob_searchComment = r.URL.Query().Get("na_comment")
-	fmt.Fprint(w, pageBeginning("Arcpics search"))
+	fmt.Fprint(w, pageBeginning("Arcpics search", ""))
 	fmt.Fprint(w, webMenu("/search"))
 	fmt.Fprint(w, webSearch(glob_searchLabels))
 	fmt.Fprintf(w, "<h1>Results</h1>\n<code><b>Labels :</b>%s</code><br/>\n<code><b>Author :</b>%s</code><br/>\n<code><b>Location:</b>%s</code><br/>\n<code><b>Keywords:</b>%s</code><br/>\n<code><b>Comment :</b>%s</code><br/>\n", glob_searchLabels, glob_searchAuthor, glob_searchLocation, glob_searchKeywords, glob_searchComment)
@@ -453,7 +453,7 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 	*/
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, pageBeginning("About arcpics"))
+	fmt.Fprint(w, pageBeginning("About arcpics", ""))
 	fmt.Fprint(w, webMenu("/about"))
 	fmt.Fprint(w, "<h1>About Arcpics</h1>")
 	fmt.Fprintf(w, `<b>Arcpics</b> is the program for management external picture archives, or any other files.
@@ -489,7 +489,7 @@ func pageAbout(w http.ResponseWriter, r *http.Request) {
 	`, CmdHelp(""))
 }
 func pageLabels(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, pageBeginning("Arcpics Labels"))
+	fmt.Fprint(w, pageBeginning("Arcpics Labels", ""))
 	fmt.Fprint(w, webMenu("/labels"))
 	mutex.Lock()
 	dbDir := GetDatabaseDirName()
@@ -527,7 +527,7 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 		keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
 	}
 	defer db.Close()
-	fmt.Fprint(w, pageBeginning("Arcpics Label "+label+" list"))
+	fmt.Fprint(w, pageBeginning("Arcpics Label "+label+" list", ""))
 	fmt.Fprint(w, webMenu(""))
 	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
 	fmt.Fprintf(w, lblfmt, label)
@@ -693,6 +693,18 @@ func infoTable(inf JinfoType, urlPath string) string {
 		tBtn(A), tBtn(L), tBtn(K), tBtn(C),
 		tInf(A, inf.Author), tInf(L, inf.Location), tInf(K, inf.Keywords), tInf(C, inf.Comment))
 }
+func jsConstFiles(jd JdirType) string {
+	//	s := `const files = ["Saab", "Volvo", "BMW"];`
+	s := "const files = ["
+	comma := ""
+	for _, f := range jd.Files {
+		s += comma + "\"" + f.Name + "\""
+		comma = ","
+	}
+	s += "];\n"
+	return s
+}
+
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
@@ -725,13 +737,15 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		val = err.Error()
 	}
 	defer db.Close()
-	fmt.Fprint(w, pageBeginning("Arcpics Label "+label))
-	fmt.Fprint(w, webMenu(""))
 	var jd JdirType
 	if err = json.Unmarshal([]byte(val), &jd); err != nil {
+		fmt.Fprint(w, pageBeginning("Arcpics Label "+label, ""))
+		fmt.Fprint(w, webMenu(""))
 		fmt.Fprintf(w, fmtErr, label, path, err.Error())
 		return
 	}
+	fmt.Fprint(w, pageBeginning("Arcpics Label "+label, jsConstFiles(jd)))
+	fmt.Fprint(w, webMenu(""))
 	if r.Method == http.MethodPost {
 		//update changed dir info into the same file info
 		for _, f := range jd.Files {
@@ -829,7 +843,7 @@ func pageMount(w http.ResponseWriter, r *http.Request) {
 	label := r.URL.Query().Get("label")
 	localdir := r.URL.Query().Get("localdir")
 	mountdir := r.URL.Query().Get("mountdir")
-	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label)))
+	fmt.Fprint(w, pageBeginning(fmt.Sprintf("Arcpics: Mount Label %s", label), ""))
 	fmt.Fprintf(w, `<div class="column c3left"><input type="button" value="Close" onclick="mountClose();"/></div>
 <div class="column c3middle">Manage root mount points for external labels %s</div>
 <div class="column c3right"><input type="button" value="mount"/> </div>
