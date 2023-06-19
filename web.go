@@ -28,10 +28,13 @@ var reLabelList = regexp.MustCompile(`(?m)\/label-list\/([a-zA-z0-9]+)$`)
 var reLabelDir = regexp.MustCompile(`(?m)\/label-dir\/([a-zA-z0-9]+)\/(.*)$`)
 var reLabelFileJpegStr = `(?m)\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)\/(?P<JpgFile>.*\.jpg)$`
 var reLabelFileJpeg = regexp.MustCompile(reLabelFileJpegStr)
+
+// var reLabelDirIndexStr = `(?m)\/label-dir-index\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)\/(?P<Index>\d+)`
+// var reLabelDirIndex = regexp.MustCompile(reLabelDirIndexStr)
 var reImageFileStr = `(?m)^\/image(?P<Fname>\/.+)$`
 var reImageFile = regexp.MustCompile(reImageFileStr)
-var reSearchLabelsStr = `(?m).*LABELS:(?P<Labels>[\w,]+)`
-var reSearchLabels = regexp.MustCompile(reSearchLabelsStr)
+var reImageIndexStr = `(?m)\/imageindex\/(?P<Dir>.*)\/(?P<File>.*)(\?|)`
+var reImageIndex = regexp.MustCompile(reImageIndexStr)
 
 /**
  * Parses url with the given regular expression and returns the
@@ -68,6 +71,9 @@ func route(w http.ResponseWriter, r *http.Request) {
 	case reImageFile.MatchString(r.URL.Path):
 		println("case reImageFile:", r.URL.Path)
 		pageImageFile(w, r)
+	case reImageIndex.MatchString(r.URL.Path):
+		println("case reLabelDirIndex:", r.URL.Path)
+		pageImageIndex(w, r)
 	case reLabelDir.MatchString(r.URL.Path):
 		println("case reLabelDir:", r.URL.Path)
 		pageLabelDir(w, r)
@@ -569,12 +575,8 @@ func pageImageFile(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
-
-func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
-	params := getParams(reLabelFileJpegStr, r.URL.Path)
-	label := params["Label"]
-	path := params["Path"]
-	jpgFile := params["JpgFile"]
+func getLabelPathJdir(label, path string) (JdirType, error) {
+	var jd JdirType
 	if path == "" {
 		path = "./"
 	}
@@ -583,15 +585,67 @@ func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		val = GetDbValue(db, FILES_BUCKET, path)
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "<h1>Internal server error: %s</h1>", err.Error())
-		return
+		return jd, err
 	}
 	defer db.Close()
-	var jd JdirType
 	err = json.Unmarshal([]byte(val), &jd)
+	return jd, err
+}
+func indexPrev(i, length int) int {
+	i -= 1
+	if i < 0 {
+		i = length - 1
+	}
+	return i
+}
+func indexNext(i, length int) int {
+	i += 1
+	if i >= length {
+		i = 0
+	}
+	return i
+}
+func pageImageIndex(w http.ResponseWriter, r *http.Request) {
+	params := getParams(reImageIndexStr, r.URL.Path)
+	dir := params["Dir"]
+	file := params["File"]
+	filesStr := r.URL.Query().Get("files")
+	files := strings.Split(filesStr, ",")
+	prev := file
+	next := file
 	ok := false
-	if err == nil {
+	for i, f := range files {
+		if f == file {
+			prev = files[indexPrev(i, len(files))]
+			next = files[indexNext(i, len(files))]
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "<h1>%d - File not found: %s</h1>", http.StatusNotFound, file)
+		return
+	}
+	linkFmt := `/imageindex/%s/%s?files=%s`
+	linkPrev := fmt.Sprintf(linkFmt, dir, prev, filesStr)
+	linkNext := fmt.Sprintf(linkFmt, dir, next, filesStr)
+	pageStr := `<a href="%s">&lt;</a><img src="/image/%s" width="90%%" ><a href="%s">&gt;</a>`
+	fmt.Fprintf(w, pageStr, linkPrev, dir+"/"+file, linkNext)
+}
+
+func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
+	params := getParams(reLabelFileJpegStr, r.URL.Path)
+	label := params["Label"]
+	path := params["Path"]
+	jpgFile := params["JpgFile"]
+
+	ok := false
+	jd, err := getLabelPathJdir(label, path)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, "<h1>Internal server error: %s</h1>", err.Error())
+	} else {
 		for _, f := range jd.Files {
 			if jpgFile == f.Name {
 				w.WriteHeader(http.StatusOK)
@@ -708,6 +762,7 @@ func jsConstFiles(jd JdirType) string {
 func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-dir\/(?P<Label>[a-zA-z0-9]+)\/(?P<Path>.*)`, r.URL.Path)
 	label := params["Label"]
+	mountDir := LabelMounts.Get(label)
 	path := params["Path"]
 	if path == "" {
 		path = "./"
@@ -738,6 +793,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 	var jd JdirType
+
 	if err = json.Unmarshal([]byte(val), &jd); err != nil {
 		fmt.Fprint(w, pageBeginning("Arcpics Label "+label, ""))
 		fmt.Fprint(w, webMenu(""))
@@ -782,8 +838,16 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Thumbnail images
-	mountDir := LabelMounts.Get(label)
 	fmt.Fprint(w, "\n</pre><hr/>\n")
+	filesStr := ""
+	for _, f := range jd.Files {
+		if filesStr != "" {
+			filesStr += ","
+		}
+		if isJpegFile(f.Name) {
+			filesStr += f.Name
+		}
+	}
 	for _, f := range jd.Files {
 		if isJpegFile(f.Name) {
 			title := f.Name + ": " + f.Info.Comment
@@ -792,9 +856,11 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 			}
 			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" title="%s"/>`, label, path, f.Name, title)
 			if mountDir != "" {
-				//fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
-				title := "Title: " + f.Name + ": " + f.Info.Author + "|" + f.Info.Keywords + "|" + f.Info.Location + "|" + f.Info.Comment
-				fmt.Fprintf(w, `<span onclick="openWin('/image/%s/%s/%s','%s')">%s</span>%s`, mountDir, path, f.Name, title, img, "\n")
+				//v1 fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
+				//v2 title := "Title: " + f.Name + ": " + f.Info.Author + "|" + f.Info.Keywords + "|" + f.Info.Location + "|" + f.Info.Comment
+				//v2 fmt.Fprintf(w, `<span onclick="openWin('/image/%s/%s/%s','%s')">%s</span>%s`, mountDir, path, f.Name, title, img, "\n")
+				fmt.Fprintf(w, `<span onclick="openWin('/imageindex/%s/%s/%s?files=%s','%s')">%s</span>%s`, mountDir, path, f.Name, filesStr, title, img, "\n")
+
 			} else {
 				fmt.Fprintf(w, `%s%s`, img, "\n")
 			}

@@ -9,7 +9,7 @@ line:
 	move Windows/Ubuntu — Alt + Up/Down arrow
 */
 const (
-	Version                 string = "0.0.5"
+	Version                 string = "0.0.6"
 	defaultName                    = "arcpics"                  // arcpics
 	defaultNameDash                = defaultName + "-"          // arcpics-
 	defaultNameDashLabel           = defaultNameDash + "label"  // arcpics-label
