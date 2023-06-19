@@ -630,8 +630,14 @@ func pageImageIndex(w http.ResponseWriter, r *http.Request) {
 	linkFmt := `/imageindex/%s/%s?files=%s`
 	linkPrev := fmt.Sprintf(linkFmt, dir, prev, filesStr)
 	linkNext := fmt.Sprintf(linkFmt, dir, next, filesStr)
-	pageStr := `<a href="%s">&lt;</a><img src="/image/%s" width="90%%" ><a href="%s">&gt;</a>`
-	fmt.Fprintf(w, pageStr, linkPrev, dir+"/"+file, linkNext)
+	pageStr := `<html><body><map name="workmap">
+	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
+	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
+  </map>
+ <img src="/image/%s" usemap="#workmap" width="1200" height="800" >
+ </body></html>
+ `
+	fmt.Fprintf(w, pageStr, linkPrev, linkNext, dir+"/"+file)
 }
 
 func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
