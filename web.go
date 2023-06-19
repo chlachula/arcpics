@@ -841,10 +841,10 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "\n</pre><hr/>\n")
 	filesStr := ""
 	for _, f := range jd.Files {
-		if filesStr != "" {
-			filesStr += ","
-		}
 		if isJpegFile(f.Name) {
+			if filesStr != "" {
+				filesStr += ","
+			}
 			filesStr += f.Name
 		}
 	}
