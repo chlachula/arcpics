@@ -610,6 +610,10 @@ func pageImageIndex(w http.ResponseWriter, r *http.Request) {
 	dir := params["Dir"]
 	file := params["File"]
 	filesStr := r.URL.Query().Get("files")
+	to_stash := r.URL.Query().Get("to_stash")
+	if to_stash == "true" {
+		copyToStash(dir, file)
+	}
 	files := strings.Split(filesStr, ",")
 	prev := file
 	next := file
@@ -622,22 +626,25 @@ func pageImageIndex(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 	}
+	filesStr = "files=" + filesStr
 	if !ok {
 		w.WriteHeader(http.StatusNotFound)
 		fmt.Fprintf(w, "<h1>%d - File not found: %s</h1>", http.StatusNotFound, file)
 		return
 	}
-	linkFmt := `/imageindex/%s/%s?files=%s`
+	linkFmt := `/imageindex/%s/%s?%s`
 	linkPrev := fmt.Sprintf(linkFmt, dir, prev, filesStr)
+	linkCopy := fmt.Sprintf(linkFmt, dir, file, "to_stash=true&"+filesStr)
 	linkNext := fmt.Sprintf(linkFmt, dir, next, filesStr)
 	pageStr := `<html><body><map name="workmap">
 	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
+	<area shape="circle" coords="600,50,50"   alt="copy" title="copy to stash" href="%s">
 	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
   </map>
  <img src="/image/%s" usemap="#workmap" width="1200" height="800" >
  </body></html>
  `
-	fmt.Fprintf(w, pageStr, linkPrev, linkNext, dir+"/"+file)
+	fmt.Fprintf(w, pageStr, linkPrev, linkCopy, linkNext, dir+"/"+file)
 }
 
 func pageLabelFileJpeg(w http.ResponseWriter, r *http.Request) {
