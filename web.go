@@ -830,17 +830,22 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	parentDir, _ := getParentDir(path)
+	linkParent := ""
+	parentFmt := "      <a href=\"/label-dir/%s/%s\" title=\"parent directory\">%s</a>\n"
+	if path != "./" {
+		linkParent = fmt.Sprintf(parentFmt, label, parentDir, "⮲") //ribbon arrow up left U+2BB2
+	}
 	linkPrev, linkNext := prevNextPathLinks(parentVal, lastDir(path))
-	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s(path: %s)%s<hr/>\n"
-	fmt.Fprintf(w, lblfmt, label, linkPrev, path, linkNext)
+	lblfmt := "<h1>Arcpics Label: %s</h1>\n%s %s(path: %s)%s<hr/>\n"
+	fmt.Fprintf(w, lblfmt, label, linkParent, linkPrev, path, linkNext)
 	fmt.Fprint(w, infoTable(jd.Info, r.URL.Path))
 	fmt.Fprint(w, "<button type=\"button\" onclick=\"toggleHideDisplay('idFiles')\">Hide/Display Files</button>")
 
-	head := "<pre id=\"idFiles\">%33s %55s %45s %s\n"
+	head := "<pre style=\"display:none;\" id=\"idFiles\">%33s %55s %45s %s\n"
 	fmt.Fprintf(w, head, `<a href="?C=N;O=D">Name</a>`, `<a href="?C=M;O=A">Last modified</a>`, `<a href="?C=S;O=A">Size</a>`, `<a href="?C=D;O=A">Description</a>`)
-	parentDir, _ := getParentDir(path)
 	if path != "./" {
-		fmt.Fprintf(w, "      <a href=\"/label-dir/%s/%s\">%s</a>\n", label, parentDir, "parent directory")
+		fmt.Fprintf(w, parentFmt, label, parentDir, "parent directory")
 	}
 	for _, f := range jd.Files {
 		fixNameLink(w, label, path, f.Name, false)
