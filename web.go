@@ -872,7 +872,7 @@ func pageLabelDir(w http.ResponseWriter, r *http.Request) {
 			if mountDir != "" {
 				title += " - click for full picture"
 			}
-			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" title="%s"/>`, label, path, f.Name, title)
+			img := fmt.Sprintf(`<img src="/label-dir/%s/%s/%s" width="160" title="%s"/>`, label, path, f.Name, title)
 			if mountDir != "" {
 				//v1 fmt.Fprintf(w, `<a href="/image/%s/%s/%s">%s</a>%s`, mountDir, path, f.Name, img, "\n")
 				//v2 title := "Title: " + f.Name + ": " + f.Info.Author + "|" + f.Info.Keywords + "|" + f.Info.Location + "|" + f.Info.Comment
