@@ -21,7 +21,8 @@ var mutex = &sync.Mutex{}
 
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
-var reStash = regexp.MustCompile(`(?m)\/stash[\/]{0,1}$`)
+var reStash = regexp.MustCompile(`(?m)\/stash[\/]{0,1}.*$`)
+var reStashIndexStr = `(?m)\/stash\/(?P<Dir>.*)\/(?P<File>.*)(\?|)`
 var reMount = regexp.MustCompile(`(?m)\/mount[\/]{0,1}$`)
 var reSearchStr = `(?m)\/search[\/]{0,1}(?P<Query>.*)$`
 var reSearch = regexp.MustCompile(reSearchStr)
@@ -97,6 +98,7 @@ func pageBeginning(title, jsFiles string) string {
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
   <link rel="icon" type="image/ico" href="https://raw.githubusercontent.com/chlachula/arcpics/main/cmd/favicon-Arc-bw-32.ico">	
 <style>
+.imgcenter {display: block;margin-left: auto;margin-right: auto;}
 * {	box-sizing: border-box;  }
 
   /* Tree unequal columns that floats next to each other */
@@ -467,9 +469,74 @@ func pageStash(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("Arcpics Stash", ""))
 	fmt.Fprint(w, webMenu("/stash"))
 	fmt.Fprint(w, "<h1>Arcpics Stash</h1>")
-	fmt.Fprintf(w, `<b>Stash</b> is the subdirectory <b>%s</b> where full resolution pictures can be copied to from mounted labels.
-	<br/><br/>`, filepath.Join(dotDefaultName, "stash"))
+	fmt.Fprintf(w, `<b>Stash</b> is the subdirectory <b>%s</b> where full resolution pictures can be copied to from mounted labels. `, filepath.Join(dotDefaultName, stashName))
+
+	params := getParams(reStashIndexStr, r.URL.Path)
+	dir := filepath.Join(GetDatabaseDirName(), stashName)
+	file := params["File"]
+	fmt.Printf("DEBUG file=%s\n", file)
+	filesStr := ""
+	var files = make([]string, 0)
+	if file == "" {
+		// for the first time
+		dFiles, err := ioutil.ReadDir(dir)
+		if err != nil {
+			fmt.Fprintf(w, "<h1>%s</h1>", err.Error())
+			return
+		}
+		for _, df := range dFiles {
+			if !df.IsDir() && isJpegFile(df.Name()) {
+				files = append(files, df.Name())
+				if filesStr != "" {
+					filesStr += ","
+				}
+				filesStr += df.Name()
+			}
+		}
+		if len(files) <= 0 {
+			fmt.Fprintf(w, "<h1>There is no jpeg file in the directory %s</h1>", dir)
+			return
+		}
+		file = files[0]
+	} else {
+		dir = params["Dir"]
+		filesStr = r.URL.Query().Get("files")
+		files = strings.Split(filesStr, ",")
+	}
+	prev := file
+	next := file
+	ok := false
+	index := 0
+	for i, f := range files {
+		if f == file {
+			prev = files[indexPrev(i, len(files))]
+			next = files[indexNext(i, len(files))]
+			ok = true
+			index = i + 1
+			break
+		}
+	}
+	filesStr = "files=" + filesStr
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		fmt.Fprintf(w, "<h1>%d - File not found: %s</h1>", http.StatusNotFound, file)
+		return
+	}
+	fmt.Fprintf(w, "<br/>File %s %d/%d<br/>", file, index, len(files))
+
+	linkFmt := `/stash/%s/%s?%s`
+	linkPrev := fmt.Sprintf(linkFmt, dir, prev, filesStr)
+	linkNext := fmt.Sprintf(linkFmt, dir, next, filesStr)
+	pageStr := `<map name="stashmap">
+	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
+	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
+  </map>
+ <img src="/image/%s" usemap="#stashmap" width="1200" class="imgcenter" >
+ </body></html>
+ `
+	fmt.Fprintf(w, pageStr, linkPrev, linkNext, dir+"/"+file)
 }
+
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics", ""))
 	fmt.Fprint(w, webMenu("/about"))

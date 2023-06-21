@@ -587,7 +587,7 @@ func readEntireFileToBytes(fname string) ([]byte, error) {
 }
 func copyToStash(dir, file string) {
 	dbDir := GetDatabaseDirName()
-	stashDir := filepath.Join(dbDir, "stash")
+	stashDir := filepath.Join(dbDir, stashName)
 	_ = os.Mkdir(stashDir, 0755)
 	copy(filepath.Join(dir, file), filepath.Join(stashDir, file))
 }

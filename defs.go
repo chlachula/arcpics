@@ -16,6 +16,7 @@ const (
 	defaultNameDashLabelDot        = defaultNameDashLabel + "." // arcpics-label.
 	dotDefaultName                 = "." + defaultName          // .arcpics
 	defaultPicturesDirName         = "Arc-Pics"
+	stashName                      = "stash"
 
 	INIT_LABEL_KEY        = "ARC-PICS-LABEL-KEY"
 	LABEL_SUMMARY_fmt     = "LABEL-%s-SUMMARY"
