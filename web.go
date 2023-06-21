@@ -648,12 +648,14 @@ func pageImageIndex(w http.ResponseWriter, r *http.Request) {
 	linkPrev := fmt.Sprintf(linkFmt, dir, prev, filesStr)
 	linkCopy := fmt.Sprintf(linkFmt, dir, file, "to_stash=true&"+filesStr)
 	linkNext := fmt.Sprintf(linkFmt, dir, next, filesStr)
-	pageStr := `<html><body><map name="workmap">
+	pageStr := `<html>
+	<head><style>.center {display: block;margin-left: auto;margin-right: auto;}</style></head>
+	<body bgcolor="#03012A"><map name="workmap">
 	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
 	<area shape="circle" coords="600,50,50"   alt="copy" title="copy to stash" href="%s">
 	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
   </map>
- <img src="/image/%s" usemap="#workmap" width="1200" height="800" >
+ <img src="/image/%s" usemap="#workmap" width="1200" class="center" >
  </body></html>
  `
 	fmt.Fprintf(w, pageStr, linkPrev, linkCopy, linkNext, dir+"/"+file)
