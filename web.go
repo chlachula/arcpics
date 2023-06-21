@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"sort"
@@ -20,6 +21,7 @@ var mutex = &sync.Mutex{}
 
 var reHome = regexp.MustCompile(`(?m)^\/$`)
 var reAbout = regexp.MustCompile(`(?m)\/about[\/]{0,1}$`)
+var reStash = regexp.MustCompile(`(?m)\/stash[\/]{0,1}$`)
 var reMount = regexp.MustCompile(`(?m)\/mount[\/]{0,1}$`)
 var reSearchStr = `(?m)\/search[\/]{0,1}(?P<Query>.*)$`
 var reSearch = regexp.MustCompile(reSearchStr)
@@ -79,6 +81,8 @@ func route(w http.ResponseWriter, r *http.Request) {
 		pageLabelDir(w, r)
 	case reLabels.MatchString(r.URL.Path):
 		pageLabels(w, r)
+	case reStash.MatchString(r.URL.Path):
+		pageStash(w, r)
 	case reAbout.MatchString(r.URL.Path):
 		pageAbout(w, r)
 	case reMount.MatchString(r.URL.Path):
@@ -309,6 +313,7 @@ func webMenu(link string) string {
 		{"/", "Home"},
 		{"/labels", "Labels"},
 		{"/search", "Search"},
+		{"/stash", "Stash"},
 		{"/about", "About"},
 	}
 	s := ""
@@ -457,6 +462,13 @@ func pageSearch(w http.ResponseWriter, r *http.Request) {
 			defer db.Close()
 		}
 	*/
+}
+func pageStash(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, pageBeginning("Arcpics Stash", ""))
+	fmt.Fprint(w, webMenu("/stash"))
+	fmt.Fprint(w, "<h1>Arcpics Stash</h1>")
+	fmt.Fprintf(w, `<b>Stash</b> is the subdirectory <b>%s</b> where full resolution pictures can be copied to from mounted labels.
+	<br/><br/>`, filepath.Join(dotDefaultName, "stash"))
 }
 func pageAbout(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, pageBeginning("About arcpics", ""))
