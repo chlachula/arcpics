@@ -121,6 +121,12 @@ func pageBeginning(title, jsFiles string) string {
   var mountWindow
   var myWindow;
   %s
+  function imgSize(id) {
+	let myImg = document.getElementById(id)
+	let realWidth = myImg.naturalWidth;
+	let realHeight = myImg.naturalHeight;
+	console.log("image id="+id+" Original width=" + realWidth + ", " + "Original height=" + realHeight);
+  }  
 function openWin(url, title) {
 	var w = 1200;
 	var h = 800;
@@ -531,7 +537,7 @@ func pageStash(w http.ResponseWriter, r *http.Request) {
 	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
 	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
   </map>
- <img src="/image/%s" usemap="#stashmap" width="1200" class="imgcenter" >
+ <img src="/image/%s" usemap="#stashmap" width="1200" class="imgcenter" id="stash_img" onload="imgSize('stash_img')" >
  </body></html>
  `
 	fmt.Fprintf(w, pageStr, linkPrev, linkNext, dir+"/"+file)
