@@ -1,5 +1,6 @@
 package arcpics
 
+//todo pageStash http://jsfiddle.net/PbAjt/ cursor with text
 import (
 	"encoding/json"
 	"fmt"
@@ -115,18 +116,23 @@ func pageBeginning(title, jsFiles string) string {
 
   /* Clear floats after the columns */
   .row:after {  content: "";display: table;clear: both;}
+  #cursorText{
+    position:absolute;
+    border:1px solid blue;
+	background-color: white;
+}
+
 </style>
 <script>
   var globalLabel = "GlobalLabelNotSet"
   var mountWindow
   var myWindow;
+  var curTxt=document.createElement('div');
+  var imgX;
+  var imgY;
+  var imgID;
+
   %s
-  function imgSize(id) {
-	let myImg = document.getElementById(id)
-	let realWidth = myImg.naturalWidth;
-	let realHeight = myImg.naturalHeight;
-	console.log("image id="+id+" Original width=" + realWidth + ", " + "Original height=" + realHeight);
-  }  
 function openWin(url, title) {
 	var w = 1200;
 	var h = 800;
@@ -217,6 +223,38 @@ function closeWin() {
 	}
 	es.innerHTML = ei.value;
   }
+  function imgSize(id) {
+	let myImg = document.getElementById(id)
+	let realWidth = myImg.naturalWidth;
+	let realHeight = myImg.naturalHeight;
+	console.log("image id="+id+" Original width=" + realWidth + ", " + "Original height=" + realHeight);
+  }  
+  function moveCursorInit(id){
+	let myImg = document.getElementById(id)
+	imgID = myImg;
+	imgID.height = imgID.naturalHeight * imgID.width / imgID.naturalWidth;
+	document.body.onmousemove=moveCursor;
+	curTxt.id="cursorText";
+	curTxt.innerHTML="Hello!";
+	document.body.appendChild(curTxt);
+  }
+  function moveCursor(e){
+	if(!e){e=window.event;}
+	if (e.clientX > imgID.x && e.clientX < imgID.x+imgID.width && e.clientY > imgID.y && e.clientY < imgID.y+imgID.height) {
+	    curTxt.innerHTML="Position "+e.clientX+","+e.clientY+" imgUpperLeft:"+imgID.x+","+imgID.y+" size "+imgID.width+"x"+imgID.height;
+	    var curTxtLen=[curTxt.offsetWidth,curTxt.offsetHeight];	
+		var left = e.clientX;
+		var top = e.clientY-curTxtLen[1];
+		if ( e.clientX > imgID.x+0.25*imgID.width ) {
+           left = left - curTxtLen[0];
+		}
+	    curTxt.style.left = left + 'px';
+	    curTxt.style.top = top +'px';
+    } else {
+		curTxt.innerHTML="";
+	}
+}
+
  </script>
 </head>
 <body style="text-align:left"><a name="top"></a>
@@ -537,7 +575,7 @@ func pageStash(w http.ResponseWriter, r *http.Request) {
 	<area shape="rect" coords="0,0,200,800"   alt="prev" title="previous picture" href="%s">
 	<area shape="rect" coords="1000,0,1200,800" alt="next" title="next picture" href="%s">
   </map>
- <img src="/image/%s" usemap="#stashmap" width="1200" class="imgcenter" id="stash_img" onload="imgSize('stash_img')" >
+ <img src="/image/%s" usemap="#stashmap" width="1200" class="imgcenter" id="stash_img" onload="imgSize('stash_img');moveCursorInit('stash_img');" >
  </body></html>
  `
 	fmt.Fprintf(w, pageStr, linkPrev, linkNext, dir+"/"+file)
