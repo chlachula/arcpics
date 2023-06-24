@@ -241,7 +241,7 @@ function closeWin() {
   function moveCursor(e){
 	if(!e){e=window.event;}
 	if (e.clientX > imgID.x && e.clientX < imgID.x+imgID.width && e.clientY > imgID.y && e.clientY < imgID.y+imgID.height) {
-	    curTxt.innerHTML="Position "+e.clientX+","+e.clientY+" imgUpperLeft:"+imgID.x+","+imgID.y+" size "+imgID.width+"x"+imgID.height;
+	    curTxt.innerHTML=+e.clientX+","+e.clientY;
 	    var curTxtLen=[curTxt.offsetWidth,curTxt.offsetHeight];	
 		var left = e.clientX;
 		var top = e.clientY-curTxtLen[1];
