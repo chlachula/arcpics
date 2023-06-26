@@ -661,12 +661,14 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	defer db.Close()
 
 	fmt.Fprintf(w, "<h1>Arcpics Label %s list</h1>\n", label)
+	fmt.Fprint(w, "\n<pre>\n")
 
 	keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
 	for _, k := range keys {
 		v := GetDbValue(db, SYSTEM_BUCKET, k)
 		fmt.Fprintf(w, "<br/> %s === %s\n", string(k), string(v))
 	}
+	fmt.Fprint(w, "\n</pre>\n")
 
 	keys = ArcpicsAllKeys(db, FILES_BUCKET)
 	//nodes := makeNodes(keys)
