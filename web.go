@@ -649,17 +649,26 @@ func pageLabels(w http.ResponseWriter, r *http.Request) {
 func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-list\/(?P<Label>[a-zA-z0-9]+)$`, r.URL.Path)
 	label := params["Label"]
-	var keys []string
-	db, err := LabeledDatabase(label)
-	if err == nil {
-		//keys = ArcpicsAllKeys(db, FILES_BUCKET)
-		keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
-	}
-	defer db.Close()
 	fmt.Fprint(w, pageBeginning("Arcpics Label "+label+" list", ""))
 	fmt.Fprint(w, webMenu(""))
-	lblfmt := "<h1>Arcpics Label %s list</h1>\n"
-	fmt.Fprintf(w, lblfmt, label)
+
+	var keys []string
+	db, err := LabeledDatabase(label)
+	if err != nil {
+		fmt.Fprintf(w, "<h1>%s</h1>", err.Error())
+		return
+	}
+	defer db.Close()
+
+	fmt.Fprintf(w, "<h1>Arcpics Label %s list</h1>\n", label)
+
+	keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
+	for _, k := range keys {
+		v := GetDbValue(db, SYSTEM_BUCKET, k)
+		fmt.Fprintf(w, "<br/> %s === %s\n", string(k), string(v))
+	}
+
+	keys = ArcpicsAllKeys(db, FILES_BUCKET)
 	//nodes := makeNodes(keys)
 	for _, k := range keys {
 		link := fmt.Sprintf(`<a href="/label-dir/%s/%s" title="%s">%s</a>`, label, k, k, k+"/")
