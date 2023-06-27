@@ -646,6 +646,46 @@ func pageLabels(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 }
 
+func f2searchLink(label, name, k string) string {
+	// search?na_labels=TEST&na_author=%27Joe+Doe%27&na_location=%27Secret+location%27&na_keywords=astro&na_comment=%27Northern+lights+-+polární+záře%27
+	return fmt.Sprintf(`<a href='/search?na_labels=%s&na_%s=%s'>%s</a>`, label, name, k, k)
+}
+func f2links(label, name string, m map[string]map[string]int, m2 map[string]map[string]int) map[string]map[string]int {
+	a := m[name]
+	a2 := make(map[string]int, 0)
+	keys := make([]string, 0, len(a))
+	for k, v := range a {
+		keys = append(keys, f2searchLink(label, name, k))
+		a2[f2searchLink(label, name, k)] = v
+	}
+	m2[name] = a2
+	fmt.Printf("%d %s: %v \n", len(keys), name, a)
+	return m2
+}
+func f2prettyLinks(label, str string) string {
+	var m map[string]map[string]int
+	err := json.Unmarshal([]byte(str), &m)
+	if err != nil {
+		return fmt.Sprintf("error#1: %s \n", err.Error())
+	}
+	m2 := make(map[string]map[string]int, 0)
+	m2 = f2links(label, "author", m, m2)
+	m2 = f2links(label, "location", m, m2)
+	m2 = f2links(label, "keywords", m, m2)
+	m2 = f2links(label, "comment", m, m2)
+
+	var bytes2 []byte
+	bytes2, err = json.MarshalIndent(m2, "", "    ")
+	if err != nil {
+		return fmt.Sprintf("error#2: %s \n", err.Error())
+	}
+	s2 := string(bytes2)
+	s2 = strings.ReplaceAll(s2, "\\u003c", "<")
+	s2 = strings.ReplaceAll(s2, "\\u003e", ">")
+	s2 = strings.ReplaceAll(s2, "\\u0026", "&")
+	return s2
+}
+
 func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	params := getParams(`\/label-list\/(?P<Label>[a-zA-z0-9]+)$`, r.URL.Path)
 	label := params["Label"]
@@ -663,12 +703,14 @@ func pageLabelList(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "<h1>Arcpics Label %s list</h1>\n", label)
 	fmt.Fprint(w, "\n<pre>\n")
 
-	keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
-	for _, k := range keys {
-		v := GetDbValue(db, SYSTEM_BUCKET, k)
-		fmt.Fprintf(w, "<br/> %s === %s\n", string(k), string(v))
-	}
-	fmt.Fprint(w, "\n</pre>\n")
+	//keys = ArcpicsAllKeys(db, SYSTEM_BUCKET)
+	//for _, k := range keys {
+	//	v := GetDbValue(db, SYSTEM_BUCKET, k)
+	//	fmt.Fprintf(w, "<br/> %s === %s\n", string(k), string(v))
+	//}
+	crude := GetDbValue(db, SYSTEM_BUCKET, LABEL_FREQUENCY_WORDS)
+	prettyLinks := f2prettyLinks(label, crude)
+	fmt.Fprintf(w, "%s\n</pre>\n", prettyLinks)
 
 	keys = ArcpicsAllKeys(db, FILES_BUCKET)
 	//nodes := makeNodes(keys)
