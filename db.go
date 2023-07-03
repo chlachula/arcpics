@@ -97,12 +97,7 @@ func ArcpicsFiles2DB(db *bolt.DB, arcFS ArcpicsFS) error {
 		fmt.Printf("ArcpicsFiles2DB rootDir='%s'\n", rootDir)
 	}
 	startTime := time.Now()
-	countDir := 0
-	countFiles := 0
-	countJpegs := 0
-	totalSize := 0
-	countCreate := 0
-	countUpdate := 0
+	var countDir, countFiles, countJpegs, totalSize, countCreate, countUpdate int
 	changedDirs := make([]string, 0)
 	m := initFrequencyCounter()
 	filepath.WalkDir(arcFS.Dir, func(path string, d fs.DirEntry, err error) error {
