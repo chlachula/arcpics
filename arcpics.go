@@ -286,7 +286,7 @@ func CreateLabelFile(dirName, newLabel string) error {
 	if err != nil {
 		return err
 	}
-	if _, err = io.WriteString(f, fmt.Sprintf("label is defined by an extension of this file: %s\n", newLabel)); err != nil {
+	if _, err = io.WriteString(f, fmt.Sprintf("label is defined by an extension of this file: %s\nlabel should be unique", newLabel)); err != nil {
 		return err
 	}
 	fmt.Printf("Label file %s was created\n", fname)
